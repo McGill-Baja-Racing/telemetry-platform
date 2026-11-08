@@ -1,0 +1,22 @@
+{
+  "name": "baja-telemetry",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter server start",
+    "check": "biome check && pnpm -r typecheck",
+    "fix": "biome check --write",
+    "test": "pnpm -r test",
+    "db": "docker compose up -d db"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.5",
+    "typescript": "^6.0.3"
+  }
+}
