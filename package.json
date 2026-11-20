@@ -16,7 +16,7 @@
     "db": "docker compose up -d --wait db"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.5",
+    "@biomejs/biome": "^2.6.8",
     "typescript": "^6.0.3"
   }
 }
