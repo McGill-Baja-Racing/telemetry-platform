@@ -1,0 +1,16 @@
+name: Task
+description: Work that is not a feature, such as a cleanup or a setup step.
+type: Task
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What is true once it is done, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Links, constraints, open questions.
