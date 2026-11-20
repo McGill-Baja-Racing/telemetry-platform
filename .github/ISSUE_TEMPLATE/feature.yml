@@ -1,0 +1,16 @@
+name: Feature
+description: Something people will be able to do.
+type: Feature
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Need
+      description: Who needs it, and what they cannot do today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How it could work, with links to the design if there is one.
