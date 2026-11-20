@@ -20,7 +20,8 @@ Install the editor extensions VS Code suggests (Vue, Biome, Tailwind CSS): files
 
 | Command                            | What it does                                                               |
 | ---------------------------------- | -------------------------------------------------------------------------- |
-| `pnpm dev`                         | frontend and backend, both reload on save                                  |
+| `pnpm dev`                         | database, then frontend and backend, which reload on save                  |
+| `pnpm db`                          | database only, for migrations or Drizzle Studio                            |
 | `pnpm check`                       | lint, format check and type-check (what CI runs)                           |
 | `pnpm fix`                         | format and fix what Biome can                                              |
 | `pnpm test`                        | tests                                                                      |
