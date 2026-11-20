@@ -9,7 +9,8 @@
     "includes": ["**", "!**/typed-router.d.ts", "!**/migrations"]
   },
   "formatter": {
-    "indentStyle": "space"
+    "indentStyle": "space",
+    "lineWidth": 100
   },
   "css": {
     "parser": {
