@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { app } from "./app.ts";
+import { runCollector } from "./collector/collector.ts";
 import { env } from "./env.ts";
 
 const server = new Hono()
@@ -12,3 +13,5 @@ const server = new Hono()
 serve({ fetch: server.fetch, port: env.PORT }, (info) => {
   console.log(`Server on http://localhost:${info.port}`);
 });
+
+if (env.MASTER_URL) runCollector(env.MASTER_URL);

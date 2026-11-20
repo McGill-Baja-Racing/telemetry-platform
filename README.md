@@ -16,6 +16,16 @@ pnpm dev                              # app on http://localhost:5173
 
 Install the editor extensions VS Code suggests (Vue, Biome, Tailwind CSS): files are formatted on save.
 
+## Collecting logs from the car
+
+Join the car's Wi-Fi (`BajaDAQ`) and run `pnpm dev`. The server asks the master board for its logs every 10 seconds, downloads each new one once, and imports it into the database. The app lists the imported recordings and shows the download in progress.
+
+- Only completed logs are collected: the one being recorded shows up after Stop.
+- Each hour of running is about 80 MB to download: the `.bin` log and its `.utc` GPS time companion. The master's firmware must serve `.utc` files (`format=utc`).
+- A renamed log is recognized by its content and not imported twice.
+- The master's address is `MASTER_URL` in `server/.env`. Remove that line to turn the collector off, as on the cloud server.
+- To see each check, the download speed and the import time, run `NODE_DEBUG=collector pnpm dev`.
+
 ## Commands
 
 | Command                            | What it does                                                               |
@@ -33,13 +43,16 @@ Install the editor extensions VS Code suggests (Vue, Biome, Tailwind CSS): files
 ## Where things go
 
 ```
-server/src/index.ts   starts the server
-server/src/app.ts     mounts every feature's routes; their types feed the frontend
-server/src/env.ts     environment variables, checked at startup
-server/src/db/        Drizzle schema and migrations
-web/src/main.ts       starts the frontend
-web/src/pages/        one file per page; the routes are generated from the file names
-web/src/api.ts        typed client for the API
+server/src/index.ts     starts the server
+server/src/app.ts       mounts every feature's routes; their types feed the frontend
+server/src/env.ts       environment variables, checked at startup
+server/src/db/          Drizzle schema and migrations
+server/src/master/      client for the master board's HTTP API
+server/src/collector/   pulls new logs from the master
+server/src/recordings/  decodes the master's binary logs and imports them
+web/src/main.ts         starts the frontend
+web/src/pages/          one file per page; the routes are generated from the file names
+web/src/api.ts          typed client for the API
 ```
 
-Group code by feature, not by layer: everything about sessions goes in `server/src/sessions/`.
+Group code by feature, not by layer: everything about recordings is in `server/src/recordings/`.
