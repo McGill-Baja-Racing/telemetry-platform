@@ -34,7 +34,7 @@ Join the car's Wi-Fi (`BajaDAQ`) and run `pnpm dev`. The server asks the master 
 | `pnpm db`                          | database only, for migrations or Drizzle Studio                            |
 | `pnpm check`                       | lint, format check and type-check (what CI runs)                           |
 | `pnpm fix`                         | format and fix what Biome can                                              |
-| `pnpm test`                        | tests                                                                      |
+| `pnpm test`                        | tests, in their own `telemetry_test` database (needs `pnpm db`)            |
 | `pnpm build`, then `pnpm start`    | production: one process serves the API and the built frontend on port 3000 |
 | `pnpm --filter server db:generate` | turn changes in `db/schema.ts` into a migration                            |
 | `pnpm --filter server db:migrate`  | apply migrations                                                           |
