@@ -2,10 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baja Telemetry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BajaApp</title>
+    <script>
+      // Applies the saved theme before the first paint, so the page never flashes the wrong one.
+      const theme = localStorage.getItem("theme");
+      const light = theme === "light" || (theme !== "dark" && matchMedia("(prefers-color-scheme: light)").matches);
+      document.documentElement.dataset.theme = light ? "light" : "dark";
+    </script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100 scheme-dark">
+  <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

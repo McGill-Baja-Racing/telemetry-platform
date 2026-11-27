@@ -1,3 +1,5 @@
+import "@fontsource-variable/instrument-sans/wdth.css";
+import "@fontsource-variable/geist-mono";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
