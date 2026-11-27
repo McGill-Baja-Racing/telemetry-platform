@@ -52,7 +52,20 @@ server/src/collector/   pulls new logs from the master
 server/src/recordings/  decodes the master's binary logs and imports them
 web/src/main.ts         starts the frontend
 web/src/pages/          one file per page; the routes are generated from the file names
+web/src/navigation.ts   the sidebar; an entry appears once its page exists
+web/src/style.css       the design's colours, type sizes, radii and shadows
+web/src/components/     the building blocks (ui/), the chart (chart/), the sidebar and car bar (shell/)
 web/src/api.ts          typed client for the API
 ```
 
 Group code by feature, not by layer: everything about recordings is in `server/src/recordings/`.
+
+## Building a page
+
+Every page is made of the same building blocks. Open `/design-system` in the app to see each one with its name.
+
+- Start with `<UiPage title="…">`, split it with `<UiSection title="…">`, and pick from `web/src/components/ui/`: `UiButton`, `UiSelect`, `UiTabs`, `UiTable`, `UiFigures` and the rest.
+- Colours are the design's tokens: `bg-screen`, `text-muted`, `border-line`, `bg-axis-z`. Tailwind's own palette is removed, and the light theme swaps the same names, so no `dark:` class is needed.
+- Measured values take the `num` class: tabular, slightly condensed digits.
+- Red (`live`) is only for what is live and for actions on the car, never for a data series.
+- Icons come from `@lucide/vue`, such as `<Download />` inside a button. The mono font is only for file names, signal keys and formulas.
