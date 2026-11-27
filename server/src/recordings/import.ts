@@ -3,11 +3,17 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { sql } from "../db/index.ts";
 import type { SignalInfo } from "../master/client.ts";
-import { decodedUnits, type FirstUtc, readSamples, type Sample, summarize } from "./samples.ts";
+import {
+  decodedUnits,
+  type FirstUtc,
+  readSamples,
+  type Sample,
+  summarize,
+} from "../master/log-format.ts";
 
 const COPY_BATCH_ROWS = 5_000;
 
-export type LogFile = {
+type LogFile = {
   name: string;
   path: string;
   sha256: string;

@@ -1,6 +1,6 @@
 import { sql } from "../db/index.ts";
 
-export type Series = {
+type Series = {
   /** Seconds from the start of the recording. */
   time: number[];
   /** One array per signal, aligned with `time`, `null` where the signal has no sample. */

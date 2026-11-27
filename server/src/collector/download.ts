@@ -2,14 +2,8 @@ import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import { debuglog } from "node:util";
-import {
-  type Master,
-  MasterError,
-  type MasterLog,
-  RECORD_BYTES,
-  UTC_BYTES,
-} from "../master/client.ts";
-import { type FirstUtc, firstUtc } from "../recordings/samples.ts";
+import { type Master, MasterError, type MasterLog } from "../master/client.ts";
+import { type FirstUtc, firstUtc, RECORD_BYTES, UTC_BYTES } from "../master/log-format.ts";
 
 const IDLE_TIMEOUT_MS = 15_000;
 const PROGRESS_LOG_INTERVAL_MS = 5_000;

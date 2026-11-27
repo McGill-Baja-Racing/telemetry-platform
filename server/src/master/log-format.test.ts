@@ -1,20 +1,7 @@
 import { Readable } from "node:stream";
 import { expect, test } from "vitest";
-import { decodedUnits, firstUtc, readSamples, summarize } from "./samples.ts";
-
-function record(canId: number, timestampMs: number, value: number) {
-  const bytes = Buffer.alloc(16);
-  bytes.writeUInt32LE(canId, 0);
-  bytes.writeInt32LE(value, 8);
-  bytes.writeUInt32LE(timestampMs, 12);
-  return bytes;
-}
-
-function utc(...entries: number[]) {
-  const bytes = Buffer.alloc(entries.length * 8);
-  for (const [i, entry] of entries.entries()) bytes.writeBigInt64LE(BigInt(entry), i * 8);
-  return bytes;
-}
+import { decodedUnits, firstUtc, readSamples, summarize } from "./log-format.ts";
+import { record, utc } from "./test-logs.ts";
 
 test("decodes the worked example from LOG_FORMAT.md", async () => {
   const log = Readable.from([Buffer.from("b100000000000000dc050000e8030000", "hex")]);

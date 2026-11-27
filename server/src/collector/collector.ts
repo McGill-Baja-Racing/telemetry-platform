@@ -17,7 +17,7 @@ const debug = debuglog("collector");
 
 type Task = { log: string; step: "downloading" | "importing"; progress: number };
 
-export type CollectorStatus = {
+type CollectorStatus = {
   master: "online" | "offline";
   current: Task | null;
   lastError: { message: string; at: Date } | null;
@@ -137,7 +137,6 @@ function report(error: unknown) {
   status.lastError = { message, at: new Date() };
 }
 
-/** Joins the messages of an error and its causes, such as `fetch failed: connect EHOSTUNREACH`. */
 function messageOf(error: unknown): string {
   if (!(error instanceof Error)) return String(error);
   const message = error.message || ("code" in error ? String(error.code) : error.name);

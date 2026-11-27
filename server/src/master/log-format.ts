@@ -1,4 +1,7 @@
-import { RECORD_BYTES, UTC_BYTES } from "../master/client.ts";
+/** The master's log files, as described in ESP32DataLogger `docs/LOG_FORMAT.md`. */
+
+export const RECORD_BYTES = 16;
+export const UTC_BYTES = 8;
 
 /** The master records GPS speed in km/h × 100; decoded samples carry km/h. */
 const CAN_ID_GPS_SPEED = 0x700;
@@ -13,7 +16,7 @@ export type Sample = {
 /** The first entry of a `.utc` companion with GPS time: the ones before the fix are 0. */
 export type FirstUtc = { index: number; utcMs: number };
 
-export type Summary = {
+type Summary = {
   sampleCount: number;
   firstTimestampMs: number;
   lastTimestampMs: number;
@@ -78,7 +81,6 @@ export async function summarize(
   return { sampleCount, firstTimestampMs, lastTimestampMs, clockOffsetMs, canIds };
 }
 
-/** Regroups chunks so that each holds whole records; an incomplete last record is dropped. */
 async function* wholeRecords(input: AsyncIterable<Uint8Array>, size: number) {
   let rest = Buffer.alloc(0);
   for await (const chunk of input) {
