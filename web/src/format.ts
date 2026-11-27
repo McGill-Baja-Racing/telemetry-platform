@@ -9,3 +9,20 @@ export function formatClock(seconds: number, milliseconds = true) {
   const rest = String(ms % 1000).padStart(3, "0");
   return milliseconds ? `${minutes}:${secs}.${rest}` : `${minutes}:${secs}`;
 }
+
+/** A measured value with `digits` decimals, or a dash when there is none. */
+export function formatValue(value: number | null | undefined, digits: number) {
+  return value === null || value === undefined ? "–" : value.toFixed(digits);
+}
+
+/** The day of a run as the team names test days, such as "Saturday, November 8". */
+export function testDay(iso: string) {
+  const date = new Date(iso);
+  const thisYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: thisYear ? undefined : "numeric",
+  });
+}

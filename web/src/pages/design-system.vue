@@ -97,10 +97,12 @@ const speed = [
 
 <template>
   <UiPage title="Design system">
-    <p class="max-w-prose text-muted sm:-mt-6">
-      Every page is built from these parts. Their code is in <code class="font-mono text-xs">web/src/components</code>,
-      and the colours and type sizes in <code class="font-mono text-xs">web/src/style.css</code>.
-    </p>
+    <template #details>
+      <p class="max-w-prose text-muted">
+        Every page is built from these parts. Their code is in <code class="font-mono text-xs">web/src/components</code>,
+        and the colours and type sizes in <code class="font-mono text-xs">web/src/style.css</code>.
+      </p>
+    </template>
 
     <UiSection title="Colours">
       <div class="grid grid-cols-1 gap-6">

@@ -5,16 +5,18 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from "vue";
 import { useTheme } from "../../composables/useTheme.ts";
-import { formatClock } from "../../format.ts";
+import { formatClock, formatValue } from "../../format.ts";
 import type { MenuItem } from "../ui/types.ts";
 import UiIconButton from "../ui/UiIconButton.vue";
 import UiMenu from "../ui/UiMenu.vue";
+import { withGaps } from "./gaps.ts";
 import type { ChartSeries } from "./types.ts";
 
 /**
  * A time series chart, drawn with uPlot. One unit per chart: two measures go in two charts with
  * the same `sync` key, which then share one cursor. The legend shows the values at the cursor, or
- * the latest values when the cursor is elsewhere.
+ * the latest values when the cursor is elsewhere. Dragging across the chart asks for that range with
+ * `zoom`: the page loads it in more detail.
  */
 const {
   title,
@@ -38,6 +40,12 @@ const {
   menu?: MenuItem[];
 }>();
 
+const emit = defineEmits<{
+  zoom: [from: number, to: number];
+  /** The index in `time` under the cursor, or null when the cursor leaves. */
+  cursor: [index: number | null];
+}>();
+
 const frame = useTemplateRef("frame");
 const plot = useTemplateRef("plot");
 const theme = useTheme();
@@ -47,8 +55,30 @@ let chart: uPlot | null = null;
 const legendIndex = computed(() => cursor.value?.index ?? time.length - 1);
 
 function valueAt(values: (number | null)[]) {
-  const value = values[legendIndex.value];
-  return value === null || value === undefined ? "–" : value.toFixed(digits);
+  return formatValue(values[legendIndex.value], digits);
+}
+
+function data(): uPlot.AlignedData {
+  return [time, ...series.map((line) => withGaps(time, line.values))];
+}
+
+function onSelect(self: uPlot) {
+  const { left, width } = self.select;
+  if (width > 2) emit("zoom", self.posToVal(left, "x"), self.posToVal(left + width, "x"));
+  self.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
+}
+
+function onCursor(self: uPlot) {
+  const { idx, left } = self.cursor;
+  if (idx === null || idx === undefined || left === undefined || left < 0 || !frame.value) {
+    if (cursor.value) emit("cursor", null);
+    cursor.value = null;
+    return;
+  }
+  if (cursor.value?.index !== idx) emit("cursor", idx);
+  const over = self.over.getBoundingClientRect();
+  const box = frame.value.getBoundingClientRect();
+  cursor.value = { index: idx, left: over.left - box.left + left, top: over.bottom - box.top };
 }
 
 function draw() {
@@ -75,6 +105,7 @@ function draw() {
       scales: { x: { time: false } },
       cursor: {
         y: false,
+        drag: { x: true, y: false, setScale: false },
         sync: sync ? { key: sync } : undefined,
         points: { size: 9, width: 2, stroke: token("screen"), fill: (_, index) => strokes[index - 1] ?? "" },
       },
@@ -83,22 +114,9 @@ function draw() {
         { ...axis, size: 44, values: (_, ticks) => ticks.map((tick) => tick.toLocaleString()) },
       ],
       series: [{}, ...series.map((line, index) => ({ label: line.label, stroke: strokes[index], width: 1.5 }))],
-      hooks: {
-        setCursor: [
-          (self) => {
-            const { idx, left } = self.cursor;
-            if (idx === null || idx === undefined || left === undefined || left < 0 || !frame.value) {
-              cursor.value = null;
-              return;
-            }
-            const over = self.over.getBoundingClientRect();
-            const box = frame.value.getBoundingClientRect();
-            cursor.value = { index: idx, left: over.left - box.left + left, top: over.bottom - box.top };
-          },
-        ],
-      },
+      hooks: { setSelect: [onSelect], setCursor: [onCursor] },
     },
-    [time, ...series.map((line) => line.values)],
+    data(),
     plot.value,
   );
 }
@@ -110,7 +128,7 @@ watch(
   () => [time, series] as const,
   () => {
     if (chart && chart.series.length === series.length + 1) {
-      chart.setData([time, ...series.map((line) => line.values)]);
+      chart.setData(data());
     } else {
       draw();
     }

@@ -4,8 +4,8 @@ import { computed } from "vue";
 import { type RouteLocationRaw, RouterLink } from "vue-router";
 
 /**
- * The frame of every page: its title, up to three actions in the `actions` slot, then the page's
- * sections. A page inside another one (a run inside Runs) names its `parents`: a breadcrumb on a
+ * The frame of every page: its title, up to three actions in the `actions` slot, a line about it
+ * in `details`, then the page's sections. A page inside another one (a run inside Runs) names its `parents`: a breadcrumb on a
  * computer, a back button on a phone.
  */
 const { title, parents = [] } = defineProps<{
@@ -36,12 +36,15 @@ const back = computed(() => parents.at(-1));
       <ChevronLeft class="size-5" />{{ back.label }}
     </RouterLink>
     <div class="mx-auto grid w-full max-w-page grid-cols-1 gap-5 px-4.5 pt-1.5 pb-8 sm:gap-10 sm:px-10 sm:pt-10 sm:pb-16">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <h1>{{ title }}</h1>
-        <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2.5">
-          <slot name="actions" />
+      <header class="grid gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <h1>{{ title }}</h1>
+          <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2.5">
+            <slot name="actions" />
+          </div>
         </div>
-      </div>
+        <slot name="details" />
+      </header>
       <slot />
     </div>
   </div>
