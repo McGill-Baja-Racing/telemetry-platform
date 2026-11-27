@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import { parseResponse } from "hono/client";
+import { computed, watch } from "vue";
 import { client } from "./api.ts";
 import AppSidebar from "./components/shell/AppSidebar.vue";
 import CarBarFull from "./components/shell/CarBarFull.vue";
@@ -11,9 +12,17 @@ import { car } from "./navigation.ts";
 
 const { data: collector } = useQuery({
   queryKey: ["collector"],
-  queryFn: async () => (await client.api.collector.$get()).json(),
+  queryFn: () => parseResponse(client.api.collector.$get()),
   refetchInterval: 2000,
 });
+
+const queryClient = useQueryClient();
+watch(
+  () => collector.value?.current?.log,
+  (_, finished) => {
+    if (finished) queryClient.invalidateQueries({ queryKey: ["recordings"] });
+  },
+);
 
 const percent = new Intl.NumberFormat(undefined, { style: "percent" });
 
