@@ -7,7 +7,11 @@ import { handleHotUpdate, routes } from "vue-router/auto-routes";
 import App from "./App.vue";
 import "./style.css";
 
-const router = createRouter({ history: createWebHistory(), routes });
+// Runs is the first page until Home exists.
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [{ path: "/", redirect: "/runs" }, ...routes],
+});
 if (import.meta.hot) handleHotUpdate(router);
 
 createApp(App).use(router).use(VueQueryPlugin).mount("#app");
