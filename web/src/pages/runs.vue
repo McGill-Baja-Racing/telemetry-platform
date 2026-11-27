@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
+import { parseResponse } from "hono/client";
 import { client } from "../api.ts";
+import type { Column } from "../components/ui/types.ts";
 import UiPage from "../components/ui/UiPage.vue";
 import UiTable from "../components/ui/UiTable.vue";
 import { formatClock } from "../format.ts";
 
 const { data: recordings } = useQuery({
   queryKey: ["recordings"],
-  queryFn: async () => (await client.api.recordings.$get()).json(),
-  refetchInterval: 5000,
+  queryFn: () => parseResponse(client.api.recordings.$get()),
 });
 
-const columns: { key: string; label: string; align?: "right"; optional?: boolean }[] = [
+const columns: Column[] = [
   { key: "name", label: "Recording" },
   { key: "started", label: "Started", optional: true },
   { key: "duration", label: "Duration", align: "right" },

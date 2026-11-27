@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc"
+    "typecheck": "vue-tsc",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.3.0",
@@ -14,7 +15,6 @@
     "@lucide/vue": "^1.77.0",
     "@tanstack/vue-query": "^5.108.4",
     "@vueuse/core": "^15.0.0",
-    "better-auth": "^1.7.27",
     "hono": "^4.13.21",
     "reka-ui": "^2.11.0",
     "uplot": "^1.6.32",
@@ -28,6 +28,7 @@
     "server": "workspace:*",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.8",
+    "vitest": "^5.1.1",
     "vue-tsc": "^3.3.14"
   }
 }

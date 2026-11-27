@@ -5,7 +5,7 @@ import { type ComponentPublicInstance, ref, useTemplateRef, watch } from "vue";
 import type { Option } from "./types.ts";
 
 /** A choice between a few options, all visible, such as a 10, 30 or 60 s window. */
-const { options, label } = defineProps<{ options: Option<T>[]; label: string }>();
+const { options, label } = defineProps<{ options: readonly Option<T>[]; label: string }>();
 const model = defineModel<T>({ required: true });
 
 /** Clicking the selected option again would clear it: keep one selected. */

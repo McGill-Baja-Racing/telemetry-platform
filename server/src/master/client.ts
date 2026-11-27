@@ -1,8 +1,5 @@
 import { z } from "zod";
-
-/** Sizes from ESP32DataLogger `docs/LOG_FORMAT.md`. */
-export const RECORD_BYTES = 16;
-export const UTC_BYTES = 8;
+import { RECORD_BYTES } from "./log-format.ts";
 
 const REQUEST_TIMEOUT_MS = 5_000;
 

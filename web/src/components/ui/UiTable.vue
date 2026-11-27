@@ -1,11 +1,13 @@
 <script setup lang="ts" generic="Row extends object">
+import type { Column } from "./types.ts";
+
 /**
  * Rows of runs, nodes, laps or events. A cell shows `row[column.key]` unless a slot named
  * `cell-<key>` renders it: `<template #cell-name="{ row }">…</template>`. An `optional` column is
  * left out on a phone; the table scrolls sideways if the rest is still too wide.
  */
 const { columns, rows, rowKey } = defineProps<{
-  columns: { key: string; label: string; align?: "left" | "right"; optional?: boolean }[];
+  columns: Column[];
   rows: Row[];
   rowKey: (row: Row) => string | number;
 }>();

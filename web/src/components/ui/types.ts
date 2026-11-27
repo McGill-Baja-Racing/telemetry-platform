@@ -8,3 +8,5 @@ export type Option<T extends string = string> = { label: string; value: T };
 
 /** An entry of a menu: an action, or a line between groups. */
 export type MenuItem = { label: string; hint?: string; select: () => void } | "separator";
+
+export type Column = { key: string; label: string; align?: "left" | "right"; optional?: boolean };

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UiValue from "./UiValue.vue";
+
 /** Up to four key values side by side, such as a run's best lap and top speed. */
 const { items } = defineProps<{
   items: { label: string; value: string; unit?: string; hint?: string }[];
@@ -21,9 +23,7 @@ const { items } = defineProps<{
       }"
     >
       <dt class="truncate text-sm text-muted">{{ item.label }}</dt>
-      <dd class="num text-3xl font-semibold whitespace-nowrap md:text-4xl">
-        {{ item.value }}<small v-if="item.unit" class="ml-1 text-sm font-medium tracking-normal text-faint font-stretch-100%">{{ item.unit }}</small>
-      </dd>
+      <dd><UiValue :value="item.value" :unit="item.unit" class="text-3xl md:text-4xl" /></dd>
       <dd v-if="item.hint" class="text-sm text-faint">{{ item.hint }}</dd>
     </div>
   </dl>

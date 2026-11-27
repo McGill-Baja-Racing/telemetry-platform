@@ -12,6 +12,14 @@
     "indentStyle": "space",
     "lineWidth": 100
   },
+  "linter": {
+    "rules": {
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "error",
+        "noExcessiveLinesPerFunction": "error"
+      }
+    }
+  },
   "css": {
     "parser": {
       "tailwindDirectives": true
