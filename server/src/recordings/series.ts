@@ -1,9 +1,13 @@
 import { sql } from "../db/index.ts";
+import { divisorOf } from "./units.ts";
 
 type Series = {
   /** Seconds from the start of the recording. */
   time: number[];
-  /** One array per signal, aligned with `time`, `null` where the signal has no sample. */
+  /**
+   * One array per signal in physical units, aligned with `time`, `null` where the signal has no
+   * sample.
+   */
   values: Record<string, (number | null)[]>;
 };
 
@@ -51,7 +55,7 @@ export async function readSeries(query: Query): Promise<Series> {
       const values = valuesOf(sample.can_id);
       // Two samples of a signal at the same millisecond get a time each.
       if (series.time.at(-1) !== time || values.at(-1) !== null) addTime(time);
-      values[values.length - 1] = sample.value;
+      values[values.length - 1] = sample.value / divisorOf(sample.can_id);
     }
     return series;
   }
@@ -80,8 +84,9 @@ export async function readSeries(query: Query): Promise<Series> {
       addTime((bucket.ms + bucketMs / 2 - startMs) / 1000);
     }
     const values = valuesOf(bucket.can_id);
-    values[values.length - 2] = bucket.min_first ? bucket.min : bucket.max;
-    values[values.length - 1] = bucket.min_first ? bucket.max : bucket.min;
+    const [min, max] = [bucket.min, bucket.max].map((value) => value / divisorOf(bucket.can_id));
+    values[values.length - 2] = bucket.min_first ? min : max;
+    values[values.length - 1] = bucket.min_first ? max : min;
   }
   return series;
 }
