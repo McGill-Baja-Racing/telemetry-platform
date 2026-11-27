@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UiValue from "./UiValue.vue";
+
 /** Settings or counters, one per line: the name on the left, the value on the right. */
 const { items } = defineProps<{ items: { label: string; value: string; unit?: string }[] }>();
 </script>
@@ -11,9 +13,7 @@ const { items } = defineProps<{ items: { label: string; value: string; unit?: st
       class="flex items-baseline justify-between gap-4 py-2.75 whitespace-nowrap not-first:border-t not-first:border-line"
     >
       <dt class="truncate text-muted">{{ item.label }}</dt>
-      <dd class="num font-semibold">
-        {{ item.value }}<small v-if="item.unit" class="ml-0.75 font-normal text-faint">{{ item.unit }}</small>
-      </dd>
+      <dd><UiValue :value="item.value" :unit="item.unit" /></dd>
     </div>
   </dl>
 </template>

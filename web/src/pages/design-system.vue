@@ -2,7 +2,9 @@
 import { Download, Ellipsis, Flag, Search, Square } from "@lucide/vue";
 import { ref } from "vue";
 import LineChart from "../components/chart/LineChart.vue";
-import CarBar, { type CarState } from "../components/shell/CarBar.vue";
+import CarBarFull from "../components/shell/CarBarFull.vue";
+import CarBarSmall from "../components/shell/CarBarSmall.vue";
+import type { CarState } from "../components/shell/car.ts";
 import type { MenuItem, Tone } from "../components/ui/types.ts";
 import UiButton from "../components/ui/UiButton.vue";
 import UiChip from "../components/ui/UiChip.vue";
@@ -43,7 +45,7 @@ const tones: { tone: Tone; label: string }[] = [
   { tone: "off", label: "Disabled" },
 ];
 
-const window = ref("30");
+const timeWindow = ref("30");
 const run = ref<string>();
 const signal = ref("");
 const mine = ref(true);
@@ -153,7 +155,7 @@ const speed = [
           <Search />
         </UiTextField>
         <UiSegmented
-          v-model="window"
+          v-model="timeWindow"
           label="Window"
           :options="[
             { label: '10 s', value: '10' },
@@ -272,10 +274,9 @@ const speed = [
 
     <UiSection title="Car bar on a phone">
       <div class="grid max-w-96 gap-2.5">
-        <CarBar
+        <CarBarSmall
           v-for="item in states"
           :key="item.state"
-          layout="small"
           class="-mx-2.5"
           number="57"
           :state="item.state"
@@ -287,10 +288,9 @@ const speed = [
 
     <UiSection title="Car bar">
       <div class="grid gap-2.5 overflow-hidden rounded-xl">
-        <CarBar
+        <CarBarFull
           v-for="item in states"
           :key="item.state"
-          layout="full"
           number="57"
           :state="item.state"
           :detail="item.detail"

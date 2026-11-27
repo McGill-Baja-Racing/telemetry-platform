@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/vue-query";
 import { computed } from "vue";
 import { client } from "./api.ts";
 import AppSidebar from "./components/shell/AppSidebar.vue";
-import CarBar from "./components/shell/CarBar.vue";
+import CarBarFull from "./components/shell/CarBarFull.vue";
+import CarBarSmall from "./components/shell/CarBarSmall.vue";
 import PhoneTabBar from "./components/shell/PhoneTabBar.vue";
 import PhoneTopBar from "./components/shell/PhoneTopBar.vue";
 import { car } from "./navigation.ts";
@@ -33,7 +34,7 @@ const bar = computed(() => {
 <template>
   <div class="flex h-dvh flex-col bg-screen lg:bg-chrome">
     <div class="flex min-h-0 flex-1">
-      <AppSidebar class="hidden lg:flex" />
+      <AppSidebar class="max-lg:hidden" />
       <div class="flex min-w-0 flex-1 flex-col lg:pt-2 lg:pr-2">
         <PhoneTopBar class="lg:hidden" />
         <main class="min-h-0 flex-1 overflow-y-auto lg:rounded-2xl lg:bg-screen lg:shadow-screen">
@@ -41,7 +42,8 @@ const bar = computed(() => {
         </main>
       </div>
     </div>
-    <CarBar class="pt-2 lg:pt-0" :number="car.number" :state="bar.state" :detail="bar.detail" />
+    <CarBarSmall class="pt-2 lg:hidden" :number="car.number" :state="bar.state" :detail="bar.detail" />
+    <CarBarFull class="max-lg:hidden" :number="car.number" :state="bar.state" :detail="bar.detail" />
     <PhoneTabBar class="lg:hidden" />
   </div>
 </template>
