@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc"
+    "typecheck": "vue-tsc",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.3.0",
@@ -28,6 +29,7 @@
     "server": "workspace:*",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.8",
+    "vitest": "^5.1.1",
     "vue-tsc": "^3.3.14"
   }
 }
