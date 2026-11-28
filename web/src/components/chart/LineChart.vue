@@ -123,7 +123,8 @@ function draw() {
 
 onMounted(draw);
 onBeforeUnmount(() => chart?.destroy());
-watch(() => theme.state.value, draw);
+// After the theme is applied to the page, or the chart reads the old theme's colours.
+watch(() => theme.state.value, draw, { flush: "post" });
 watch(
   () => [time, series] as const,
   () => {
