@@ -10,13 +10,14 @@ import type { MenuItem } from "../ui/types.ts";
 import UiIconButton from "../ui/UiIconButton.vue";
 import UiMenu from "../ui/UiMenu.vue";
 import { withGaps } from "./gaps.ts";
+import { smooth } from "./smooth.ts";
 import type { ChartSeries } from "./types.ts";
 
 /**
  * A time series chart, drawn with uPlot. One unit per chart: two measures go in two charts with
  * the same `sync` key, which then share one cursor. The legend shows the values at the cursor, or
  * the latest values when the cursor is elsewhere. Dragging across the chart asks for that range with
- * `zoom`: the page loads it in more detail.
+ * `zoom`: the page loads it in more detail. The default slot goes under the title.
  */
 const {
   title,
@@ -28,6 +29,8 @@ const {
   sync,
   digits = 0,
   menu = [],
+  yRange,
+  smoothing = 0,
 } = defineProps<{
   title: string;
   unit?: string;
@@ -40,6 +43,10 @@ const {
   /** Decimals shown in the legend. */
   digits?: number;
   menu?: MenuItem[];
+  /** A fixed y axis; it fits the data otherwise. */
+  yRange?: [number, number];
+  /** Seconds each line is averaged over, only as drawn. The legend shows the drawn values. */
+  smoothing?: number;
 }>();
 
 const emit = defineEmits<{
@@ -55,6 +62,9 @@ const cursor = ref<{ index: number; left: number; top: number } | null>(null);
 let chart: uPlot | null = null;
 
 const legendIndex = computed(() => cursor.value?.index ?? time.length - 1);
+const lines = computed(() =>
+  series.map((line) => (smoothing ? smooth(time, line.values, smoothing) : line.values)),
+);
 
 function formatX(value: number, precise = true) {
   return axis === "distance" ? `${Math.round(value)} m` : formatClock(value, precise);
@@ -67,7 +77,7 @@ function valueAt(values: (number | null)[]) {
 function data(): uPlot.AlignedData {
   // About 2 s at 40 km/h.
   const maxSpan = axis === "distance" ? 20 : undefined;
-  return [time, ...series.map((line) => withGaps(time, line.values, maxSpan))];
+  return [time, ...lines.value.map((values) => withGaps(time, values, maxSpan))];
 }
 
 function onSelect(self: uPlot) {
@@ -110,7 +120,7 @@ function draw() {
       height,
       legend: { show: false },
       padding: [8, 4, 0, 0],
-      scales: { x: { time: false } },
+      scales: { x: { time: false }, y: yRange ? { range: yRange } : {} },
       cursor: {
         y: false,
         drag: { x: true, y: false, setScale: false },
@@ -133,8 +143,9 @@ onMounted(draw);
 onBeforeUnmount(() => chart?.destroy());
 // After the theme is applied to the page, or the chart reads the old theme's colours.
 watch(() => theme.state.value, draw, { flush: "post" });
+watch(() => yRange, draw);
 watch(
-  () => [time, series] as const,
+  lines,
   () => {
     if (chart && chart.series.length === series.length + 1) {
       chart.setData(data());
@@ -154,10 +165,10 @@ useResizeObserver(plot, ([entry]) => {
       <h3>{{ title }}</h3>
       <span v-if="unit" class="text-sm text-faint">{{ unit }}</span>
       <span class="ml-auto flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
-        <span v-for="line in series" :key="line.label" class="inline-flex items-center gap-1.5">
+        <span v-for="(line, index) in series" :key="line.label" class="inline-flex items-center gap-1.5">
           <i class="h-0.75 w-3 rounded-xs" :style="{ background: `var(--color-${line.color})` }" />
           {{ line.label }}
-          <b class="num min-w-8 text-right font-semibold text-fg">{{ valueAt(line.values) }}</b>
+          <b class="num min-w-8 text-right font-semibold text-fg">{{ valueAt(lines[index]) }}</b>
         </span>
       </span>
       <UiMenu v-if="menu.length" :items="menu">
@@ -166,6 +177,7 @@ useResizeObserver(plot, ([entry]) => {
         </UiIconButton>
       </UiMenu>
     </figcaption>
+    <slot />
     <div ref="plot" class="chart-plot" />
     <span
       v-if="cursor"

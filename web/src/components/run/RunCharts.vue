@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Signal } from "../../signals.ts";
-import LineChart from "../chart/LineChart.vue";
+import type { ChartSettings } from "../chart/types.ts";
 import UiSignalToggle from "../ui/UiSignalToggle.vue";
+import RunChart from "./RunChart.vue";
 import type { Samples } from "./run.ts";
 
 /**
@@ -12,6 +13,8 @@ import type { Samples } from "./run.ts";
 const { groups, samples } = defineProps<{ groups: Map<string, Signal[]>; samples?: Samples }>();
 /** The names of the shown signals. */
 const shown = defineModel<string[]>("shown", { required: true });
+/** How each chart is drawn, by its title. */
+const settings = defineModel<Record<string, ChartSettings>>("settings", { required: true });
 const emit = defineEmits<{
   zoom: [from: number, to: number];
   /** The index in `samples.time` under the cursor. */
@@ -28,6 +31,7 @@ const charts = computed(() => {
     title,
     unit: list[0].unit,
     digits: list[0].digits,
+    names: list.map((signal) => signal.name),
     series: list.map((signal) => ({
       label: signal.short,
       color: signal.color,
@@ -59,7 +63,7 @@ function show(name: string, on: boolean) {
     </aside>
     <div class="grid min-w-0 flex-1 gap-4">
       <slot />
-      <LineChart
+      <RunChart
         v-for="chart in charts"
         :key="chart.title"
         :title="chart.title"
@@ -67,8 +71,9 @@ function show(name: string, on: boolean) {
         :digits="chart.digits"
         :time="samples?.time ?? []"
         :series="chart.series"
-        :height="150"
-        sync="run"
+        :settings="settings[chart.title] ?? {}"
+        @update:settings="settings = { ...settings, [chart.title]: $event }"
+        @remove="shown = shown.filter((name) => !chart.names.includes(name))"
         @zoom="(from, to) => emit('zoom', from, to)"
         @cursor="emit('cursor', $event)"
       />

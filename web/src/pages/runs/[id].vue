@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/vue-query";
 import { useElementSize, useLocalStorage } from "@vueuse/core";
 import { computed, ref, useTemplateRef, watch } from "vue";
 import { useRoute } from "vue-router";
+import type { ChartSettings } from "../../components/chart/types.ts";
 import { pointsFor, readSamples, useRun } from "../../components/run/queries.ts";
 import RunCharts from "../../components/run/RunCharts.vue";
 import RunCursor from "../../components/run/RunCursor.vue";
@@ -36,6 +37,7 @@ const shownNames = useLocalStorage("run-signals", [
   "mpu_accel_y",
   "mpu_accel_z",
 ]);
+const chartSettings = useLocalStorage<Record<string, ChartSettings>>("run-charts", {});
 const shown = computed(() => signals.value.filter((signal) => shownNames.value.includes(signal.name)));
 const shownList = computed(() => shown.value.map((signal) => signal.name));
 
@@ -146,6 +148,7 @@ function onCursor(index: number | null) {
             ref="charts"
             class="min-w-0 flex-1"
             v-model:shown="shownNames"
+            v-model:settings="chartSettings"
             :groups
             :samples
             @zoom="zoom"

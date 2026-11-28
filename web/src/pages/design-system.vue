@@ -57,8 +57,8 @@ const nodeSort = ref<Sort>({ key: "name", descending: false });
 const shown = ref({ x: true, y: true, z: true, speed: false });
 
 const menu: MenuItem[] = [
-  { label: "Y axis", hint: "Auto", select: () => {} },
-  { label: "Set min and max", select: () => {} },
+  { label: "Auto Y axis", checked: true, select: () => {} },
+  { label: "Set min and max", checked: false, select: () => {} },
   "separator",
   { label: "Remove from the view", select: () => {} },
 ];

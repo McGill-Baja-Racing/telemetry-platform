@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { Check } from "@lucide/vue";
 import {
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
@@ -26,14 +28,17 @@ const { items, align = "end" } = defineProps<{ items: MenuItem[]; align?: "start
       >
         <template v-for="(item, index) in items" :key="index">
           <DropdownMenuSeparator v-if="item === 'separator'" class="my-1.25 h-px bg-line" />
-          <DropdownMenuItem
+          <component
+            :is="item.checked === undefined ? DropdownMenuItem : DropdownMenuCheckboxItem"
             v-else
+            :model-value="item.checked"
             class="flex h-8 cursor-pointer items-center gap-2.5 rounded-sm px-2.5 whitespace-nowrap outline-none data-highlighted:bg-hover pointer-coarse:h-11"
             @select="item.select"
           >
             {{ item.label }}
             <span v-if="item.hint" class="ml-auto pl-4 text-sm text-faint">{{ item.hint }}</span>
-          </DropdownMenuItem>
+            <Check v-if="item.checked" class="ml-auto size-4 text-muted" />
+          </component>
         </template>
       </DropdownMenuContent>
     </DropdownMenuPortal>
