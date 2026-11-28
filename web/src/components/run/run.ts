@@ -28,6 +28,17 @@ export function lapAt(laps: Lap[], seconds: number) {
   return laps.findIndex((lap) => lap.start <= seconds && seconds < lap.end);
 }
 
+/**
+ * The lap a range of seconds lies in, and whether it is that whole lap. To the millisecond, as the
+ * page's address keeps ranges.
+ */
+export function lapOf(laps: Lap[], [from, to]: [number, number]) {
+  const ms = 0.001;
+  const index = laps.findIndex((lap) => lap.start - ms <= from && to <= lap.end + ms);
+  const lap = laps[index];
+  return lap ? { index, lap, whole: from - lap.start < ms && lap.end - to < ms } : undefined;
+}
+
 export function bestLap(laps: Lap[]) {
   return laps.reduce<Lap | undefined>(
     (best, lap) => (!best || lap.end - lap.start < best.end - best.start ? lap : best),

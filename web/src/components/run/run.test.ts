@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { bestLap, indexAt, lapAt, runFacts } from "./run.ts";
+import { bestLap, indexAt, lapAt, lapOf, runFacts } from "./run.ts";
 
 test("finds the last time at or before a moment", () => {
   const times = [0, 0.5, 1, 1, 2];
@@ -21,6 +21,16 @@ test("finds the lap of a moment and the fastest lap", () => {
   expect(lapAt(laps, 43)).toBe(-1);
   expect(bestLap(laps)).toBe(laps[1]);
   expect(bestLap([])).toBeUndefined();
+});
+
+test("finds the lap a range lies in, to the millisecond", () => {
+  const laps = [
+    { start: 5.0004, end: 25.1236, distance: 300 },
+    { start: 25.1236, end: 43, distance: 300 },
+  ];
+  expect(lapOf(laps, [5, 25.124])).toEqual({ index: 0, lap: laps[0], whole: true });
+  expect(lapOf(laps, [30, 40])).toEqual({ index: 1, lap: laps[1], whole: false });
+  expect(lapOf(laps, [20, 30])).toBeUndefined();
 });
 
 test("describes a run, with its distance and laps once they are known", () => {
