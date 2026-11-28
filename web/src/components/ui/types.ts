@@ -19,5 +19,8 @@ export type Column = {
   sortable?: boolean;
 };
 
+/** The first and last of the days picked, as local days such as "2026-11-08". */
+export type DayRange = [string, string];
+
 /** The column a table is sorted by. */
 export type Sort = { key: string; descending: boolean };

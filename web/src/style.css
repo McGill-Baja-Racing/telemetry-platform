@@ -244,6 +244,11 @@
   letter-spacing: -0.01em;
 }
 
+/* What opens over the page from a control: a menu, a list of options, a calendar. */
+@utility popover {
+  @apply z-50 rounded-xl bg-popover shadow-popover data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in;
+}
+
 /* Room for the iPhone's notch and home bar, or a small margin elsewhere. */
 @utility pt-safe {
   padding-top: max(env(safe-area-inset-top), --spacing(3));

@@ -22,6 +22,26 @@ export function formatChange(value: number, digits: number) {
   return `${value > 0 ? "+" : "−"}${size}`;
 }
 
+/** The local day of a moment, such as "2026-11-08". Days in this form sort and compare as text. */
+export function localDay(time: string | number) {
+  const date = new Date(time);
+  return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join("-");
+}
+
+/** Whether a value, such as one read from the address, is a day that exists in that form. */
+export function isDay(value: unknown): value is string {
+  return typeof value === "string" && localDay(`${value}T00:00`) === value;
+}
+
+const dayFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+
+/** A day or a range of days, such as "Nov 8, 2026" or "Nov 1 – 8, 2026". */
+export function formatDays([from, to]: [string, string]) {
+  return dayFormat.formatRange(new Date(`${from}T00:00`), new Date(`${to}T00:00`));
+}
+
 /** The day of a run as the team names test days, such as "Saturday, November 8". */
 export function testDay(iso: string) {
   const date = new Date(iso);

@@ -5,10 +5,11 @@ import LineChart from "../components/chart/LineChart.vue";
 import CarBarFull from "../components/shell/CarBarFull.vue";
 import CarBarSmall from "../components/shell/CarBarSmall.vue";
 import type { CarState } from "../components/shell/car.ts";
-import type { MenuItem, Sort, Tone } from "../components/ui/types.ts";
+import type { DayRange, MenuItem, Sort, Tone } from "../components/ui/types.ts";
 import UiButton from "../components/ui/UiButton.vue";
 import UiCheckbox from "../components/ui/UiCheckbox.vue";
 import UiChip from "../components/ui/UiChip.vue";
+import UiDateRange from "../components/ui/UiDateRange.vue";
 import UiFigures from "../components/ui/UiFigures.vue";
 import UiFormRow from "../components/ui/UiFormRow.vue";
 import UiIconButton from "../components/ui/UiIconButton.vue";
@@ -49,6 +50,7 @@ const tones: { tone: Tone; label: string }[] = [
 const timeWindow = ref("30");
 const run = ref<string>();
 const signal = ref("");
+const days = ref<DayRange | null>(null);
 const mine = ref(true);
 const powertrain = ref(false);
 const ticked = ref(true);
@@ -156,6 +158,7 @@ const speed = [
             { label: 'Hill climb', value: 'hill' },
           ]"
         />
+        <UiDateRange v-model="days" label="Date" :marked="['2026-11-01', '2026-11-08']" />
         <UiTextField v-model="signal" type="search" label="Add a signal" placeholder="Add a signal" class="w-56">
           <Search />
         </UiTextField>
