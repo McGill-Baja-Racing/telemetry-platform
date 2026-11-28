@@ -184,7 +184,7 @@ function onCursor(index: number | null) {
         </div>
       </template>
       <template #laps>
-        <RunLaps :laps :best :has-track="hasTrack" @pick="showLap" />
+        <RunLaps :run-id="route.params.id" :laps :best :has-track="hasTrack" @pick="showLap" />
       </template>
     </UiTabs>
   </UiPage>

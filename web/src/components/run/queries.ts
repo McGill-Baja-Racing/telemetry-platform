@@ -58,3 +58,8 @@ export function readSamples(param: Param, names: string[], points: number, range
   const query = { signals: names.join(","), points: String(points), ...span(range) };
   return parseResponse(runApi.samples.$get({ param, query }));
 }
+
+export function readStats(param: Param, names: string[], range: Range) {
+  const query = { signals: names.join(","), ...span(range) };
+  return parseResponse(runApi.stats.$get({ param, query }));
+}

@@ -36,7 +36,7 @@ const model = defineModel<T>();
       <SelectContent
         position="popper"
         :side-offset="6"
-        class="z-50 min-w-(--reka-select-trigger-width) origin-(--reka-select-content-transform-origin) rounded-xl bg-popover p-1.5 shadow-popover data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in"
+        class="z-50 max-h-(--reka-select-content-available-height) min-w-(--reka-select-trigger-width) origin-(--reka-select-content-transform-origin) rounded-xl bg-popover p-1.5 shadow-popover data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in"
       >
         <SelectViewport>
           <SelectItem

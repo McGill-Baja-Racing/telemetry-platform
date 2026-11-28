@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { formatClock, formatValue } from "./format.ts";
+import { formatChange, formatClock, formatValue } from "./format.ts";
 
 test("shows minutes, seconds and milliseconds", () => {
   expect(formatClock(518.512)).toBe("8:38.512");
@@ -19,4 +19,10 @@ test("shows a dash for a missing value", () => {
   expect(formatValue(48.456, 2)).toBe("48.46");
   expect(formatValue(null, 1)).toBe("–");
   expect(formatValue(undefined, 0)).toBe("–");
+});
+
+test("signs a change, except one that rounds to zero", () => {
+  expect(formatChange(1.25, 1)).toBe("+1.3");
+  expect(formatChange(-0.3, 2)).toBe("−0.30");
+  expect(formatChange(-0.004, 2)).toBe("0.00");
 });
