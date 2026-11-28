@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { keepPreviousData, useQuery } from "@tanstack/vue-query";
-import { StorageSerializers, useElementSize, useLocalStorage } from "@vueuse/core";
-import { parseResponse } from "hono/client";
+import { useElementSize, useLocalStorage } from "@vueuse/core";
 import { computed, ref, useTemplateRef, watch } from "vue";
 import { useRoute } from "vue-router";
-import { client } from "../../api.ts";
+import { pointsFor, readSamples, useRun } from "../../components/run/queries.ts";
 import RunCharts from "../../components/run/RunCharts.vue";
 import RunCursor from "../../components/run/RunCursor.vue";
 import RunLaps from "../../components/run/RunLaps.vue";
@@ -17,13 +16,11 @@ import { formatClock, testDay } from "../../format.ts";
 import { chartableSignals } from "../../signals.ts";
 
 const route = useRoute("/runs/[id]");
-const param = computed(() => ({ id: route.params.id }));
-const runApi = client.api.recordings[":id"];
-
-const { data: run } = useQuery({
-  queryKey: ["recording", param],
-  queryFn: () => parseResponse(runApi.$get({ param: param.value })),
-});
+const loaded = useRun(() => route.params.id);
+const { param, hasTrack, startLine } = loaded;
+const { data: run } = loaded.run;
+const { data: track } = loaded.track;
+const { data: lapResult } = loaded.laps;
 
 const duration = computed(() =>
   run.value ? (Date.parse(run.value.endedAt) - Date.parse(run.value.startedAt)) / 1000 : 0,
@@ -60,18 +57,11 @@ watch(range, (shown) => {
 
 const charts = useTemplateRef("charts");
 const { width } = useElementSize(() => charts.value?.$el);
-/** About one point per pixel, in steps so that resizing the window rarely loads again. */
-const points = computed(() => Math.min(Math.max(Math.round(width.value / 200) * 200, 200), 4000));
-
-function readSamples(names: string[], points: number, range: [number, number] | null) {
-  const query = { signals: names.join(","), points: String(points) };
-  const span = range ? { from: String(range[0]), to: String(range[1]) } : {};
-  return parseResponse(runApi.samples.$get({ param: param.value, query: { ...query, ...span } }));
-}
+const points = computed(() => pointsFor(width.value));
 
 const { data: samples } = useQuery({
   queryKey: ["samples", param, shownList, range, points],
-  queryFn: () => readSamples(shownList.value, points.value, range.value),
+  queryFn: () => readSamples(param.value, shownList.value, points.value, range.value),
   enabled: computed(() => shownList.value.length > 0 && width.value > 0),
   placeholderData: keepPreviousData,
 });
@@ -82,7 +72,7 @@ const overviewSignal = computed(
 );
 const { data: overviewSamples } = useQuery({
   queryKey: ["overview", param, overviewSignal],
-  queryFn: () => readSamples([overviewSignal.value.name], 500, null),
+  queryFn: () => readSamples(param.value, [overviewSignal.value.name], 500, null),
   enabled: computed(() => overviewSignal.value !== undefined),
 });
 const overview = computed(() => {
@@ -91,25 +81,6 @@ const overview = computed(() => {
   return data && values ? { time: data.time, values } : undefined;
 });
 
-const { data: track } = useQuery({
-  queryKey: ["track", param],
-  queryFn: () => parseResponse(runApi.track.$get({ param: param.value })),
-});
-const hasTrack = computed(() => (track.value?.time.length ?? 0) > 1);
-
-/** Kept from one run to the next: runs of the same test day share it. */
-const startLine = useLocalStorage<{ lat: number; lon: number } | null>("start-line", null, {
-  serializer: StorageSerializers.object,
-});
-const { data: lapResult } = useQuery({
-  queryKey: ["laps", param, startLine],
-  queryFn: () => {
-    const { lat, lon } = startLine.value ?? { lat: 0, lon: 0 };
-    const query = { lat: String(lat), lon: String(lon) };
-    return parseResponse(runApi.laps.$get({ param: param.value, query }));
-  },
-  enabled: computed(() => startLine.value !== null && hasTrack.value),
-});
 const laps = computed<Lap[]>(() => lapResult.value?.laps ?? []);
 const best = computed(() => bestLap(laps.value));
 
