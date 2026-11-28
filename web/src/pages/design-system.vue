@@ -5,7 +5,7 @@ import LineChart from "../components/chart/LineChart.vue";
 import CarBarFull from "../components/shell/CarBarFull.vue";
 import CarBarSmall from "../components/shell/CarBarSmall.vue";
 import type { CarState } from "../components/shell/car.ts";
-import type { MenuItem, Tone } from "../components/ui/types.ts";
+import type { MenuItem, Sort, Tone } from "../components/ui/types.ts";
 import UiButton from "../components/ui/UiButton.vue";
 import UiChip from "../components/ui/UiChip.vue";
 import UiFigures from "../components/ui/UiFigures.vue";
@@ -51,6 +51,7 @@ const signal = ref("");
 const mine = ref(true);
 const powertrain = ref(false);
 const tab = ref("nodes");
+const nodeSort = ref<Sort>({ key: "name", descending: false });
 const shown = ref({ x: true, y: true, z: true, speed: false });
 
 const menu: MenuItem[] = [
@@ -224,11 +225,12 @@ const speed = [
         <template #nodes>
           <UiTable
             :columns="[
-              { key: 'name', label: 'Node' },
-              { key: 'id', label: 'Id', optional: true },
+              { key: 'name', label: 'Node', sortable: true },
+              { key: 'id', label: 'Id', optional: true, sortable: true },
               { key: 'rate', label: 'Rate', align: 'right' },
-              { key: 'state', label: 'State' },
+              { key: 'state', label: 'State', sortable: true },
             ]"
+            v-model:sort="nodeSort"
             :rows="nodes"
             :row-key="(row) => row.id"
           >
