@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { formatClock, formatValue } from "../../format.ts";
 import type { Signal } from "../../signals.ts";
+import { lastValue } from "../chart/gaps.ts";
 import UiKeyValues from "../ui/UiKeyValues.vue";
 import UiValue from "../ui/UiValue.vue";
 import { indexAt, type Lap, lapAt, type Samples } from "./run.ts";
@@ -21,17 +22,15 @@ const lap = computed(() => {
   return index < 0 ? "" : `Lap ${index + 1}, ${formatClock(cursor - laps[index].start)}`;
 });
 
-/** A signal without a sample at the cursor shows its last one before it. */
+/** A signal without a sample at the cursor shows its last one before it, as its line does. */
 const values = computed(() => {
   if (!samples || cursor === null) return [];
   const index = indexAt(samples.time, cursor);
   return signals
     .filter((signal) => signal.name in samples.values)
     .map((signal) => {
-      const list = samples.values[signal.name];
-      let i = index;
-      while (i > 0 && list[i] === null) i--;
-      return { label: signal.label, value: formatValue(list[i], signal.digits), unit: signal.unit };
+      const value = lastValue(samples.time, samples.values[signal.name], index);
+      return { label: signal.label, value: formatValue(value, signal.digits), unit: signal.unit };
     });
 });
 </script>

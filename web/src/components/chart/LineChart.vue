@@ -9,7 +9,7 @@ import { formatClock, formatValue } from "../../format.ts";
 import type { MenuItem } from "../ui/types.ts";
 import UiIconButton from "../ui/UiIconButton.vue";
 import UiMenu from "../ui/UiMenu.vue";
-import { withGaps } from "./gaps.ts";
+import { lastValue, MAX_SPAN_SECONDS, withGaps } from "./gaps.ts";
 import { type ChartMarks, markHooks, yScale } from "./marks.ts";
 import { smooth } from "./smooth.ts";
 import type { ChartSeries } from "./types.ts";
@@ -76,14 +76,15 @@ function formatX(value: number, precise = true) {
   return axis === "distance" ? `${Math.round(value)} m` : formatClock(value, precise);
 }
 
+/** The longest silence a line is drawn across: on a distance axis, about 2 s at 40 km/h. */
+const maxSpan = () => (axis === "distance" ? 20 : MAX_SPAN_SECONDS);
+
 function valueAt(values: (number | null)[]) {
-  return formatValue(values[legendIndex.value], digits);
+  return formatValue(lastValue(time, values, legendIndex.value, maxSpan()), digits);
 }
 
 function data(): uPlot.AlignedData {
-  // About 2 s at 40 km/h.
-  const maxSpan = axis === "distance" ? 20 : undefined;
-  return [time, ...lines.value.map((values) => withGaps(time, values, maxSpan))];
+  return [time, ...lines.value.map((values) => withGaps(time, values, maxSpan()))];
 }
 
 function onSelect(self: uPlot) {
