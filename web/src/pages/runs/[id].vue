@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { keepPreviousData, useQuery } from "@tanstack/vue-query";
-import { useElementSize, useLocalStorage } from "@vueuse/core";
+import { useElementSize } from "@vueuse/core";
 import { computed, ref, useTemplateRef, watch } from "vue";
 import { useRoute } from "vue-router";
-import type { ChartSettings } from "../../components/chart/types.ts";
 import { pointsFor, readSamples, useRun } from "../../components/run/queries.ts";
 import RunCharts from "../../components/run/RunCharts.vue";
 import RunCursor from "../../components/run/RunCursor.vue";
@@ -11,6 +10,7 @@ import RunLaps from "../../components/run/RunLaps.vue";
 import RunRangeBar from "../../components/run/RunRangeBar.vue";
 import { bestLap, durationOf, indexAt, type Lap, lapAt, runFacts } from "../../components/run/run.ts";
 import TrackMap from "../../components/run/TrackMap.vue";
+import { useRunViews } from "../../components/run/views.ts";
 import UiPage from "../../components/ui/UiPage.vue";
 import UiTabs from "../../components/ui/UiTabs.vue";
 import { testDay } from "../../format.ts";
@@ -28,17 +28,8 @@ const groups = computed(() => chartableSignals(run.value?.signals ?? []));
 const signals = computed(() => [...groups.value.values()].flat());
 
 /** Kept from one run to the next. */
-const shownNames = useLocalStorage("run-signals", [
-  "gps_speed",
-  "engine_rpm",
-  "front_brake_pressure",
-  "rear_brake_pressure",
-  "mpu_accel_x",
-  "mpu_accel_y",
-  "mpu_accel_z",
-]);
-const chartSettings = useLocalStorage<Record<string, ChartSettings>>("run-charts", {});
-const shown = computed(() => signals.value.filter((signal) => shownNames.value.includes(signal.name)));
+const { name: viewName, view } = useRunViews();
+const shown = computed(() => signals.value.filter((signal) => view.value.signals.includes(signal.name)));
 const shownList = computed(() => shown.value.map((signal) => signal.name));
 
 /** Seconds from the start of the run that the charts show; the whole run when null. */
@@ -147,8 +138,9 @@ function onCursor(index: number | null) {
           <RunCharts
             ref="charts"
             class="min-w-0 flex-1"
-            v-model:shown="shownNames"
-            v-model:settings="chartSettings"
+            v-model:view="viewName"
+            v-model:shown="view.signals"
+            v-model:settings="view.charts"
             :groups
             :samples
             @zoom="zoom"
