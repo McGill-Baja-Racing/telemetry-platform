@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { GitCompare, Search, X } from "@lucide/vue";
+import { GitCompare, Search, Upload, X } from "@lucide/vue";
 import { useQuery } from "@tanstack/vue-query";
 import { useMediaQuery } from "@vueuse/core";
 import { parseResponse } from "hono/client";
-import { computed, ref } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { client } from "../../api.ts";
+import { useLogImport } from "../../components/run/logImport.ts";
+import RunImportStatus from "../../components/run/RunImportStatus.vue";
 import RunPreview from "../../components/run/RunPreview.vue";
 import { durationOf, formatStarted } from "../../components/run/run.ts";
 import type { Column, Sort } from "../../components/ui/types.ts";
@@ -81,11 +83,38 @@ function select(id: number, on: boolean) {
 const compareLink = computed(() =>
   selected.value.length === 2 ? `/compare?runs=${selected.value.join(",")}` : undefined,
 );
+
+const picker = useTemplateRef("picker");
+const logImport = useLogImport((id) => {
+  picked.value = id;
+});
+const importing = computed(() => ["uploading", "importing"].includes(logImport.state.value?.step ?? ""));
+
+function importFiles(input: HTMLInputElement) {
+  logImport.start([...(input.files ?? [])]);
+  // Picking the same file again must still start an import.
+  input.value = "";
+}
 </script>
 
 <template>
   <div class="flex min-h-full flex-col">
     <UiPage title="Runs" class="flex-1">
+      <template #actions>
+        <UiButton :disabled="importing" @click="picker?.click()"><Upload />Import a log file</UiButton>
+        <input
+          ref="picker"
+          type="file"
+          accept=".bin,.utc"
+          multiple
+          hidden
+          @change="importFiles($event.target as HTMLInputElement)"
+        />
+      </template>
+      <template v-if="logImport.state.value" #details>
+        <RunImportStatus :state="logImport.state.value" @cancel="logImport.cancel" @dismiss="logImport.dismiss" />
+      </template>
+
       <UiTextField v-model="search" type="search" label="Search runs" placeholder="Name or file" class="sm:w-65">
         <Search />
       </UiTextField>
