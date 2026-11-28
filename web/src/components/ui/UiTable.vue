@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="Row extends object">
-import { ArrowDown, ArrowUp } from "@lucide/vue";
+import { ArrowDown, ArrowUp, ChevronDown } from "@lucide/vue";
 import { computed } from "vue";
 import { cellOf, groupRows } from "./table.ts";
 import type { Column, Sort } from "./types.ts";
@@ -10,8 +10,10 @@ import type { Column, Sort } from "./types.ts";
  * left out on a phone; the table scrolls sideways if the rest is still too wide.
  *
  * Clicking a `sortable` column sorts the rows by `row[column.key]` into `v-model:sort`. `group`
- * names the group of each row: neighbours with the same name share a heading. `active` marks the
- * row shown elsewhere, such as in a preview, and makes rows emit `pick` when clicked.
+ * names the group of each row: neighbours with the same name share a heading. With
+ * `v-model:collapsed`, a heading opens and closes its group, and the model lists the closed ones.
+ * `active` marks the row shown elsewhere, such as in a preview, and makes rows emit `pick` when
+ * clicked.
  */
 const { columns, rows, rowKey, group, active } = defineProps<{
   columns: Column[];
@@ -21,11 +23,22 @@ const { columns, rows, rowKey, group, active } = defineProps<{
   active?: (row: Row) => boolean;
 }>();
 const sort = defineModel<Sort>("sort");
+const collapsed = defineModel<string[]>("collapsed");
 const emit = defineEmits<{ pick: [row: Row] }>();
 
 defineSlots<Record<`cell-${string}`, (props: { row: Row }) => unknown>>();
 
-const groups = computed(() => groupRows(rows, sort.value, group));
+const groups = computed(() =>
+  groupRows(rows, sort.value, group).map((part) => ({
+    ...part,
+    open: !collapsed.value?.includes(part.name),
+  })),
+);
+
+function toggle(name: string, open: boolean) {
+  const others = (collapsed.value ?? []).filter((other) => other !== name);
+  collapsed.value = open ? [...others, name] : others;
+}
 
 /** Numbers, such as dates and durations, sort largest first; text sorts from A. */
 function sortBy(key: string) {
@@ -82,11 +95,22 @@ const padding = computed(() => (active ? "pl-2.5 pr-3.5 last:pr-2.5" : "pr-6 las
       <tbody v-for="part in groups" :key="part.name">
         <tr v-if="part.name">
           <th :colspan="columns.length" scope="rowgroup" class="pt-7.5 pb-2.5 font-semibold" :class="{ 'pl-2.5': active }">
-            {{ part.name }}
+            <button
+              v-if="collapsed"
+              type="button"
+              :aria-expanded="part.open"
+              class="-my-1 flex w-full cursor-pointer items-center gap-1.5 py-1 text-left pointer-coarse:-my-3 pointer-coarse:py-3"
+              @click="toggle(part.name, part.open)"
+            >
+              {{ part.name }}
+              <ChevronDown class="size-3.5 text-faint transition-transform" :class="{ '-rotate-90': !part.open }" />
+              <span v-if="!part.open" class="num font-normal text-faint">{{ part.rows.length }}</span>
+            </button>
+            <template v-else>{{ part.name }}</template>
           </th>
         </tr>
         <tr
-          v-for="row in part.rows"
+          v-for="row in part.open ? part.rows : []"
           :key="rowKey(row)"
           :class="{ 'group cursor-pointer': active }"
           :aria-current="active?.(row) || undefined"
