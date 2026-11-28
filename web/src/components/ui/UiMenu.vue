@@ -24,7 +24,7 @@ const { items, align = "end" } = defineProps<{ items: MenuItem[]; align?: "start
       <DropdownMenuContent
         :align
         :side-offset="6"
-        class="z-50 grid min-w-55 origin-(--reka-dropdown-menu-content-transform-origin) rounded-xl bg-popover p-1.5 shadow-popover data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in"
+        class="popover grid min-w-55 origin-(--reka-dropdown-menu-content-transform-origin) p-1.5"
       >
         <template v-for="(item, index) in items" :key="index">
           <DropdownMenuSeparator v-if="item === 'separator'" class="my-1.25 h-px bg-line" />
