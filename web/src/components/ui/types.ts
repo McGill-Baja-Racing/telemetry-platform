@@ -6,8 +6,10 @@ export type Tone = "ok" | "warn" | "crit" | "info" | "off";
 
 export type Option<T extends string = string> = { label: string; value: T };
 
-/** An entry of a menu: an action, or a line between groups. */
-export type MenuItem = { label: string; hint?: string; select: () => void } | "separator";
+/** An entry of a menu: an action, or a line between groups. `checked` makes it a tick box. */
+export type MenuItem =
+  | { label: string; hint?: string; checked?: boolean; select: () => void }
+  | "separator";
 
 export type Column = {
   key: string;

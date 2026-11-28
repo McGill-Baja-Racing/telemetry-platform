@@ -1,5 +1,5 @@
 /** A signal silent for longer than this shows a gap in its line. */
-const MAX_SPAN_SECONDS = 2;
+export const MAX_SPAN_SECONDS = 2;
 
 /**
  * uPlot breaks a line at `null` and draws across `undefined`. Signals recorded at different rates
@@ -17,4 +17,20 @@ export function withGaps(time: number[], values: (number | null)[], maxSpan = MA
     previous = i;
   }
   return drawn;
+}
+
+/**
+ * The value at `index`, or the last one before it as long as its line is drawn there: null after a
+ * silence longer than `maxSpan`, so a slower signal shows where it is between its samples.
+ */
+export function lastValue(
+  time: number[],
+  values: (number | null)[],
+  index: number,
+  maxSpan = MAX_SPAN_SECONDS,
+) {
+  for (let i = index; i >= 0 && time[index] - time[i] <= maxSpan; i--) {
+    if (values[i] !== null) return values[i];
+  }
+  return null;
 }

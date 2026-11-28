@@ -29,7 +29,7 @@ const model = defineModel<T>();
       class="inline-flex h-8 min-w-0 cursor-pointer items-center gap-2 rounded-md pr-2.25 pl-3 font-medium whitespace-nowrap inset-ring inset-ring-line-strong transition-colors hover:bg-hover pointer-coarse:h-11"
     >
       <span class="font-normal text-faint">{{ label }}</span>
-      <SelectValue :placeholder class="truncate" />
+      <SelectValue :placeholder class="flex-1 truncate text-left data-placeholder:font-normal data-placeholder:text-faint" />
       <ChevronDown class="size-3.5 text-faint" />
     </SelectTrigger>
     <SelectPortal>

@@ -1,10 +1,35 @@
 import { formatClock } from "../../format.ts";
+import { MAX_SPAN_SECONDS } from "../chart/gaps.ts";
 
 /** Seconds from the start of the run, and metres driven. */
 export type Lap = { start: number; end: number; distance: number };
 
 /** Values in physical units, aligned with `time` in seconds from the start of the run. */
 export type Samples = { time: number[]; values: Record<string, (number | null)[]> };
+
+/** The moments when a signal is above or below a value. */
+export type Highlight = { signal: string; above: boolean; value: number };
+
+/**
+ * When the highlighted signal is above or below its value, as the first and last seconds of each
+ * stretch. Other signals' samples are skipped, and a silence like a GPS dropout ends a stretch.
+ */
+export function momentsOf({ time, values }: Samples, { signal, above, value }: Highlight) {
+  const moments: [number, number][] = [];
+  let last: [number, number] | undefined;
+  (values[signal] ?? []).forEach((sample, i) => {
+    if (sample === null) return;
+    if (above ? sample <= value : sample >= value) {
+      last = undefined;
+    } else if (last && time[i] - last[1] <= MAX_SPAN_SECONDS) {
+      last[1] = time[i];
+    } else {
+      last = [time[i], time[i]];
+      moments.push(last);
+    }
+  });
+  return moments;
+}
 
 /** The index of the last of the sorted `times` at or before `seconds`, or 0. */
 export function indexAt(times: number[], seconds: number) {
@@ -26,6 +51,17 @@ export function indexAt(times: number[], seconds: number) {
 /** The index of the lap that `seconds` falls in, or -1. */
 export function lapAt(laps: Lap[], seconds: number) {
   return laps.findIndex((lap) => lap.start <= seconds && seconds < lap.end);
+}
+
+/**
+ * The lap a range of seconds lies in, and whether it is that whole lap. To the millisecond, as the
+ * page's address keeps ranges.
+ */
+export function lapOf(laps: Lap[], [from, to]: [number, number]) {
+  const ms = 0.001;
+  const index = laps.findIndex((lap) => lap.start - ms <= from && to <= lap.end + ms);
+  const lap = laps[index];
+  return lap ? { index, lap, whole: from - lap.start < ms && lap.end - to < ms } : undefined;
 }
 
 export function bestLap(laps: Lap[]) {

@@ -1,22 +1,36 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Signal } from "../../signals.ts";
-import LineChart from "../chart/LineChart.vue";
-import UiSignalToggle from "../ui/UiSignalToggle.vue";
-import type { Samples } from "./run.ts";
+import type { ChartSettings } from "../chart/types.ts";
+import RunChart from "./RunChart.vue";
+import RunSignals from "./RunSignals.vue";
+import { type Highlight, momentsOf, type Samples } from "./run.ts";
 
 /**
- * The run's signals grouped by node, beside a chart for each group of shown signals. The default
- * slot goes above the charts.
+ * The view's signals beside a chart for each group of them, with the highlighted moments shaded.
+ * The default slot goes above the charts.
  */
-const { groups, samples } = defineProps<{ groups: Map<string, Signal[]>; samples?: Samples }>();
-/** The names of the shown signals. */
+const { groups, samples, highlight } = defineProps<{
+  groups: Map<string, Signal[]>;
+  samples?: Samples;
+  highlight: Highlight | null;
+}>();
+/** The view's name, the names of its signals, and how it draws each chart, by title. */
+const view = defineModel<string>("view", { required: true });
 const shown = defineModel<string[]>("shown", { required: true });
+const settings = defineModel<Record<string, ChartSettings>>("settings", { required: true });
 const emit = defineEmits<{
   zoom: [from: number, to: number];
   /** The index in `samples.time` under the cursor. */
   cursor: [index: number | null];
 }>();
+
+/** Shaded from the samples shown, as precise as the lines, in the highlighted signal's colour. */
+const marks = computed(() => {
+  const signal = [...groups.values()].flat().find((s) => s.name === highlight?.signal);
+  if (!samples || !highlight || !signal) return undefined;
+  return { spans: momentsOf(samples, highlight), color: signal.color };
+});
 
 const charts = computed(() => {
   const data = samples;
@@ -28,6 +42,7 @@ const charts = computed(() => {
     title,
     unit: list[0].unit,
     digits: list[0].digits,
+    names: list.map((signal) => signal.name),
     series: list.map((signal) => ({
       label: signal.short,
       color: signal.color,
@@ -35,31 +50,19 @@ const charts = computed(() => {
     })),
   }));
 });
-
-function show(name: string, on: boolean) {
-  shown.value = on ? [...shown.value, name] : shown.value.filter((n) => n !== name);
-}
 </script>
 
 <template>
   <div class="flex flex-col gap-8 xl:flex-row xl:items-start">
-    <aside class="order-last grid gap-0.5 xl:order-first xl:w-48 xl:flex-none" aria-label="Signals">
-      <template v-for="[node, list] in groups" :key="node">
-        <h3 class="px-2 pt-4 pb-1 text-sm text-faint first:pt-0">{{ node }}</h3>
-        <UiSignalToggle
-          v-for="signal in list"
-          :key="signal.name"
-          :model-value="shown.includes(signal.name)"
-          :color="signal.color"
-          :name="signal.label"
-          :unit="signal.unit"
-          @update:model-value="show(signal.name, $event)"
-        />
-      </template>
-    </aside>
+    <RunSignals
+      v-model:view="view"
+      v-model:shown="shown"
+      :groups
+      class="order-last xl:order-first xl:w-48 xl:flex-none"
+    />
     <div class="grid min-w-0 flex-1 gap-4">
       <slot />
-      <LineChart
+      <RunChart
         v-for="chart in charts"
         :key="chart.title"
         :title="chart.title"
@@ -67,8 +70,11 @@ function show(name: string, on: boolean) {
         :digits="chart.digits"
         :time="samples?.time ?? []"
         :series="chart.series"
-        :height="150"
-        sync="run"
+        :marks
+        :reference="highlight && chart.names.includes(highlight.signal) ? highlight.value : undefined"
+        :settings="settings[chart.title] ?? {}"
+        @update:settings="settings = { ...settings, [chart.title]: $event }"
+        @remove="shown = shown.filter((name) => !chart.names.includes(name))"
         @zoom="(from, to) => emit('zoom', from, to)"
         @cursor="emit('cursor', $event)"
       />
