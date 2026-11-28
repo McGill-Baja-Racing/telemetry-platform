@@ -8,22 +8,34 @@ import { readSeries } from "./series.ts";
 import { findLaps, readTrack } from "./track.ts";
 import { unitsOf } from "./units.ts";
 
-const idParam = zValidator("param", z.object({ id: z.coerce.number().int() }));
+export const idParam = zValidator("param", z.object({ id: z.coerce.number().int() }));
 
-const samplesQuery = z
-  .object({
-    /** Signal names, comma-separated. */
-    signals: z
-      .string()
-      .min(1)
-      .transform((names) => [...new Set(names.split(","))]),
-    /** Seconds from the start of the recording; the whole recording by default. */
-    from: z.coerce.number().min(0).default(0),
-    to: z.coerce.number().min(0).optional(),
+const range = {
+  /** Signal names, comma-separated. */
+  signals: z
+    .string()
+    .min(1)
+    .transform((names) => [...new Set(names.split(","))]),
+  /** Seconds from the start of the recording; the whole recording by default. */
+  from: z.coerce.number().min(0).default(0),
+  to: z.coerce.number().min(0).optional(),
+};
+
+function inOrder<T extends z.ZodType<{ from: number; to?: number }>>(schema: T) {
+  return schema.refine((query) => query.to === undefined || query.from < query.to, {
+    message: "from must be before to",
+  });
+}
+
+export const rangeQuery = inOrder(z.object(range));
+
+const samplesQuery = inOrder(
+  z.object({
+    ...range,
     /** The most times the chart can draw, about its width in pixels. */
     points: z.coerce.number().int().min(2).max(10_000),
-  })
-  .refine((query) => query.to === undefined || query.from < query.to, "from must be before to");
+  }),
+);
 
 /** A point of the start line, in degrees. */
 const lapsQuery = z.object({
@@ -40,7 +52,9 @@ const listed = {
   sampleCount: recordings.sampleCount,
 };
 
-async function recordingTimes(id: number) {
+type Times = { startMs: number; endMs: number };
+
+export async function recordingTimes(id: number): Promise<Times | undefined> {
   const [times] = await db
     .select({ startedAt: recordings.startedAt, endedAt: recordings.endedAt })
     .from(recordings)
@@ -48,7 +62,26 @@ async function recordingTimes(id: number) {
   return times && { startMs: times.startedAt.getTime(), endMs: times.endedAt.getTime() };
 }
 
-const notFound = { error: "No such recording" };
+/** A range in seconds from the start of the recording, in milliseconds since 1970. */
+export function msRange(times: Times, from: number, to: number | undefined) {
+  return {
+    fromMs: Math.floor(times.startMs + from * 1000),
+    toMs: to === undefined ? times.endMs : Math.ceil(times.startMs + to * 1000),
+  };
+}
+
+/** The CAN ID of each signal name, or an error naming the unknown ones. */
+export async function canIdsOf(names: string[]) {
+  const rows = await db
+    .select({ canId: signals.canId, name: signals.name })
+    .from(signals)
+    .where(inArray(signals.name, names));
+  const canIds = new Map(rows.map((row) => [row.name, row.canId]));
+  const unknown = names.filter((name) => !canIds.has(name));
+  return { canIds, error: unknown.length > 0 ? `Unknown signals: ${unknown.join(", ")}` : null };
+}
+
+export const notFound = { error: "No such recording" };
 
 export const recordingRoutes = new Hono()
   .get("/", async (c) => {
@@ -83,23 +116,15 @@ export const recordingRoutes = new Hono()
     const times = await recordingTimes(id);
     if (!times) return c.json(notFound, 404);
 
-    const rows = await db
-      .select({ canId: signals.canId, name: signals.name })
-      .from(signals)
-      .where(inArray(signals.name, names));
-    const canIds = new Map(rows.map((row) => [row.name, row.canId]));
-    const unknown = names.filter((name) => !canIds.has(name));
-    if (unknown.length > 0) {
-      return c.json({ error: `Unknown signals: ${unknown.join(", ")}` }, 400);
-    }
+    const { canIds, error } = await canIdsOf(names);
+    if (error) return c.json({ error }, 400);
 
     return c.json(
       await readSeries({
         recordingId: id,
         startMs: times.startMs,
         signals: new Map(names.map((name) => [canIds.get(name) as number, name])),
-        fromMs: Math.floor(times.startMs + from * 1000),
-        toMs: to === undefined ? times.endMs : Math.ceil(times.startMs + to * 1000),
+        ...msRange(times, from, to),
         points,
       }),
     );

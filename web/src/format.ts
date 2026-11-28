@@ -15,6 +15,13 @@ export function formatValue(value: number | null | undefined, digits: number) {
   return value === null || value === undefined ? "–" : value.toFixed(digits);
 }
 
+/** A difference with its sign, such as "+1.2" or "−0.30", and no sign when it rounds to zero. */
+export function formatChange(value: number, digits: number) {
+  const size = Math.abs(value).toFixed(digits);
+  if (Number(size) === 0) return size;
+  return `${value > 0 ? "+" : "−"}${size}`;
+}
+
 /** The day of a run as the team names test days, such as "Saturday, November 8". */
 export function testDay(iso: string) {
   const date = new Date(iso);

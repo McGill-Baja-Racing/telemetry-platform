@@ -22,6 +22,7 @@ const {
   title,
   unit,
   time,
+  axis = "time",
   series,
   height = 180,
   sync,
@@ -30,8 +31,9 @@ const {
 } = defineProps<{
   title: string;
   unit?: string;
-  /** Seconds since the start of the run, one per sample. */
+  /** Seconds since the start of the run, one per sample, or metres on a distance axis. */
   time: number[];
+  axis?: "time" | "distance";
   series: ChartSeries[];
   height?: number;
   sync?: string;
@@ -54,12 +56,18 @@ let chart: uPlot | null = null;
 
 const legendIndex = computed(() => cursor.value?.index ?? time.length - 1);
 
+function formatX(value: number, precise = true) {
+  return axis === "distance" ? `${Math.round(value)} m` : formatClock(value, precise);
+}
+
 function valueAt(values: (number | null)[]) {
   return formatValue(values[legendIndex.value], digits);
 }
 
 function data(): uPlot.AlignedData {
-  return [time, ...series.map((line) => withGaps(time, line.values))];
+  // About 2 s at 40 km/h.
+  const maxSpan = axis === "distance" ? 20 : undefined;
+  return [time, ...series.map((line) => withGaps(time, line.values, maxSpan))];
 }
 
 function onSelect(self: uPlot) {
@@ -89,7 +97,7 @@ function draw() {
   const token = (name: string) => style.getPropertyValue(`--color-${name}`).trim() || name;
   const font = `11px ${style.getPropertyValue("--font-sans")}`;
   const strokes = series.map((line) => token(line.color));
-  const axis: uPlot.Axis = {
+  const axisStyle: uPlot.Axis = {
     stroke: token("faint"),
     font,
     ticks: { show: false },
@@ -110,8 +118,8 @@ function draw() {
         points: { size: 9, width: 2, stroke: token("screen"), fill: (_, index) => strokes[index - 1] ?? "" },
       },
       axes: [
-        { ...axis, size: 28, values: (_, ticks) => ticks.map((tick) => formatClock(tick, false)) },
-        { ...axis, size: 44, values: (_, ticks) => ticks.map((tick) => tick.toLocaleString()) },
+        { ...axisStyle, size: 28, values: (_, ticks) => ticks.map((tick) => formatX(tick, false)) },
+        { ...axisStyle, size: 44, values: (_, ticks) => ticks.map((tick) => tick.toLocaleString()) },
       ],
       series: [{}, ...series.map((line, index) => ({ label: line.label, stroke: strokes[index], width: 1.5 }))],
       hooks: { setSelect: [onSelect], setCursor: [onCursor] },
@@ -123,7 +131,8 @@ function draw() {
 
 onMounted(draw);
 onBeforeUnmount(() => chart?.destroy());
-watch(() => theme.state.value, draw);
+// After the theme is applied to the page, or the chart reads the old theme's colours.
+watch(() => theme.state.value, draw, { flush: "post" });
 watch(
   () => [time, series] as const,
   () => {
@@ -163,7 +172,7 @@ useResizeObserver(plot, ([entry]) => {
       class="num pointer-events-none absolute -translate-x-1/2 rounded-sm bg-live px-1.5 py-1 text-2xs leading-none font-semibold whitespace-nowrap text-on-live"
       :style="{ left: `${cursor.left}px`, top: `${cursor.top + 3}px` }"
     >
-      {{ formatClock(time[cursor.index] ?? 0) }}
+      {{ formatX(time[cursor.index] ?? 0) }}
     </span>
   </figure>
 </template>
