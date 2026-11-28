@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { bestLap, indexAt, lapAt, lapOf, runFacts } from "./run.ts";
+import { bestLap, indexAt, lapAt, lapOf, momentsOf, runFacts } from "./run.ts";
 
 test("finds the last time at or before a moment", () => {
   const times = [0, 0.5, 1, 1, 2];
@@ -21,6 +21,22 @@ test("finds the lap of a moment and the fastest lap", () => {
   expect(lapAt(laps, 43)).toBe(-1);
   expect(bestLap(laps)).toBe(laps[1]);
   expect(bestLap([])).toBeUndefined();
+});
+
+test("finds the moments a signal is above or below a value", () => {
+  const samples = {
+    time: [0, 1, 2, 3, 4, 5, 9, 10],
+    values: { speed: [1, null, 5, 6, null, 5, 7, 2], rpm: [3, 3, 3, 3, 3, 3, 3, 3] },
+  };
+  expect(momentsOf(samples, { signal: "speed", above: true, value: 4 })).toEqual([
+    [2, 5],
+    [9, 9],
+  ]);
+  expect(momentsOf(samples, { signal: "speed", above: false, value: 4 })).toEqual([
+    [0, 0],
+    [10, 10],
+  ]);
+  expect(momentsOf(samples, { signal: "gone", above: true, value: 0 })).toEqual([]);
 });
 
 test("finds the lap a range lies in, to the millisecond", () => {

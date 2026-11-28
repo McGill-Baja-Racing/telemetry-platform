@@ -10,6 +10,7 @@ import type { MenuItem } from "../ui/types.ts";
 import UiIconButton from "../ui/UiIconButton.vue";
 import UiMenu from "../ui/UiMenu.vue";
 import { withGaps } from "./gaps.ts";
+import { type ChartMarks, markHooks, yScale } from "./marks.ts";
 import { smooth } from "./smooth.ts";
 import type { ChartSeries } from "./types.ts";
 
@@ -31,6 +32,8 @@ const {
   menu = [],
   yRange,
   smoothing = 0,
+  marks,
+  reference,
 } = defineProps<{
   title: string;
   unit?: string;
@@ -47,6 +50,9 @@ const {
   yRange?: [number, number];
   /** Seconds each line is averaged over, only as drawn. The legend shows the drawn values. */
   smoothing?: number;
+  marks?: ChartMarks;
+  /** A value drawn as a dashed line, such as a threshold. The y axis then fits it too. */
+  reference?: number;
 }>();
 
 const emit = defineEmits<{
@@ -120,7 +126,7 @@ function draw() {
       height,
       legend: { show: false },
       padding: [8, 4, 0, 0],
-      scales: { x: { time: false }, y: yRange ? { range: yRange } : {} },
+      scales: { x: { time: false }, y: yScale(yRange, reference) },
       cursor: {
         y: false,
         drag: { x: true, y: false, setScale: false },
@@ -132,7 +138,11 @@ function draw() {
         { ...axisStyle, size: 44, values: (_, ticks) => ticks.map((tick) => tick.toLocaleString()) },
       ],
       series: [{}, ...series.map((line, index) => ({ label: line.label, stroke: strokes[index], width: 1.5 }))],
-      hooks: { setSelect: [onSelect], setCursor: [onCursor] },
+      hooks: {
+        setSelect: [onSelect],
+        setCursor: [onCursor],
+        ...markHooks(() => ({ marks, reference }), token, font),
+      },
     },
     data(),
     plot.value,
@@ -143,7 +153,11 @@ onMounted(draw);
 onBeforeUnmount(() => chart?.destroy());
 // After the theme is applied to the page, or the chart reads the old theme's colours.
 watch(() => theme.state.value, draw, { flush: "post" });
-watch(() => yRange, draw);
+watch([() => yRange, () => reference], draw);
+watch(
+  () => marks,
+  () => chart?.redraw(false),
+);
 watch(
   lines,
   () => {

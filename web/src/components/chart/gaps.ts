@@ -1,5 +1,5 @@
 /** A signal silent for longer than this shows a gap in its line. */
-const MAX_SPAN_SECONDS = 2;
+export const MAX_SPAN_SECONDS = 2;
 
 /**
  * uPlot breaks a line at `null` and draws across `undefined`. Signals recorded at different rates

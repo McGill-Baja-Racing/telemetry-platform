@@ -7,9 +7,18 @@ import { useRoute, useRouter } from "vue-router";
 import { pointsFor, readSamples, useRun } from "../../components/run/queries.ts";
 import RunCharts from "../../components/run/RunCharts.vue";
 import RunCursor from "../../components/run/RunCursor.vue";
+import RunHighlight from "../../components/run/RunHighlight.vue";
 import RunLaps from "../../components/run/RunLaps.vue";
 import RunRangeBar from "../../components/run/RunRangeBar.vue";
-import { bestLap, durationOf, indexAt, type Lap, lapAt, runFacts } from "../../components/run/run.ts";
+import {
+  bestLap,
+  durationOf,
+  type Highlight,
+  indexAt,
+  type Lap,
+  lapAt,
+  runFacts,
+} from "../../components/run/run.ts";
 import TrackMap from "../../components/run/TrackMap.vue";
 import { useRunViews } from "../../components/run/views.ts";
 import UiButton from "../../components/ui/UiButton.vue";
@@ -33,7 +42,13 @@ const signals = computed(() => [...groups.value.values()].flat());
 /** Kept from one run to the next. */
 const { name: viewName, view } = useRunViews();
 const shown = computed(() => signals.value.filter((signal) => view.value.signals.includes(signal.name)));
-const shownList = computed(() => shown.value.map((signal) => signal.name));
+const highlight = ref<Highlight | null>(null);
+/** The shown signals, and the highlighted one to find its moments even when it is not shown. */
+const loadedNames = computed(() => {
+  const names = shown.value.map((signal) => signal.name);
+  const extra = highlight.value?.signal;
+  return extra && !names.includes(extra) ? [...names, extra] : names;
+});
 
 /** Seconds from the start of the run that the charts show, kept in the address; null for all. */
 const range = computed<[number, number] | null>({
@@ -65,9 +80,9 @@ const { width } = useElementSize(() => charts.value?.$el);
 const points = computed(() => pointsFor(width.value));
 
 const { data: samples } = useQuery({
-  queryKey: ["samples", param, shownList, range, points],
-  queryFn: () => readSamples(param.value, shownList.value, points.value, range.value),
-  enabled: computed(() => shownList.value.length > 0 && width.value > 0),
+  queryKey: ["samples", param, loadedNames, range, points],
+  queryFn: () => readSamples(param.value, loadedNames.value, points.value, range.value),
+  enabled: computed(() => loadedNames.value.length > 0 && width.value > 0),
   placeholderData: keepPreviousData,
 });
 
@@ -161,10 +176,12 @@ function onCursor(index: number | null) {
             v-model:settings="view.charts"
             :groups
             :samples
+            :highlight
             @zoom="zoom"
             @cursor="onCursor"
           >
             <RunRangeBar :range :laps :duration :overview @zoom="zoom" @whole="range = null" />
+            <RunHighlight v-model="highlight" :run-id="route.params.id" :signals :range @zoom="zoom" />
           </RunCharts>
           <aside class="grid gap-4 xl:w-68 xl:flex-none">
             <RunCursor :cursor :samples :signals="shown" :laps />

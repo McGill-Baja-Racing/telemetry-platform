@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import LineChart from "../chart/LineChart.vue";
+import type { ChartMarks } from "../chart/marks.ts";
 import type { ChartSeries, ChartSettings } from "../chart/types.ts";
 import type { MenuItem } from "../ui/types.ts";
 import UiButton from "../ui/UiButton.vue";
 import UiTextField from "../ui/UiTextField.vue";
 
 /** A chart of the run with its options: a y axis set by hand, smoothing, or removing it. */
-const { title, unit, digits, time, series } = defineProps<{
+const { title, unit, digits, time, series, marks, reference } = defineProps<{
   title: string;
   unit: string;
   digits: number;
   time: number[];
   series: ChartSeries[];
+  marks?: ChartMarks;
+  reference?: number;
 }>();
 const settings = defineModel<ChartSettings>("settings", { required: true });
 const emit = defineEmits<{
@@ -79,6 +82,8 @@ watch([min, max], ([low, high]) => {
     :menu
     :y-range="settings.y"
     :smoothing="settings.smoothing"
+    :marks
+    :reference
     sync="run"
     @zoom="(from, to) => emit('zoom', from, to)"
     @cursor="emit('cursor', $event)"
