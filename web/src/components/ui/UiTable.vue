@@ -1,26 +1,56 @@
 <script setup lang="ts" generic="Row extends object">
-import type { Column } from "./types.ts";
+import { ArrowDown, ArrowUp } from "@lucide/vue";
+import { computed } from "vue";
+import { cellOf, groupRows } from "./table.ts";
+import type { Column, Sort } from "./types.ts";
 
 /**
  * Rows of runs, nodes, laps or events. A cell shows `row[column.key]` unless a slot named
  * `cell-<key>` renders it: `<template #cell-name="{ row }">…</template>`. An `optional` column is
  * left out on a phone; the table scrolls sideways if the rest is still too wide.
+ *
+ * Clicking a `sortable` column sorts the rows by `row[column.key]` into `v-model:sort`. `group`
+ * names the group of each row: neighbours with the same name share a heading. `active` marks the
+ * row shown elsewhere, such as in a preview, and makes rows emit `pick` when clicked.
  */
-const { columns, rows, rowKey } = defineProps<{
+const { columns, rows, rowKey, group, active } = defineProps<{
   columns: Column[];
   rows: Row[];
   rowKey: (row: Row) => string | number;
+  group?: (row: Row) => string;
+  active?: (row: Row) => boolean;
 }>();
+const sort = defineModel<Sort>("sort");
+const emit = defineEmits<{ pick: [row: Row] }>();
 
 defineSlots<Record<`cell-${string}`, (props: { row: Row }) => unknown>>();
 
-function text(row: Row, key: string) {
-  return String((row as Record<string, unknown>)[key] ?? "");
+const groups = computed(() => groupRows(rows, sort.value, group));
+
+/** Numbers, such as dates and durations, sort largest first; text sorts from A. */
+function sortBy(key: string) {
+  const first = rows[0];
+  const descending =
+    sort.value?.key === key
+      ? !sort.value.descending
+      : first !== undefined && typeof cellOf(first, key) === "number";
+  sort.value = { key, descending };
 }
+
+function ariaSort(key: string) {
+  if (sort.value?.key !== key) return undefined;
+  return sort.value.descending ? "descending" : "ascending";
+}
+
+/**
+ * Picked rows have a background, so cells keep room inside it on both sides. Every cell pads its
+ * left, since an optional first column can be hidden.
+ */
+const padding = computed(() => (active ? "pl-2.5 pr-3.5 last:pr-2.5" : "pr-6 last:pr-0"));
 </script>
 
 <template>
-  <div class="overflow-x-auto">
+  <div class="overflow-x-auto" :class="{ '-mx-2.5': active }">
     <table class="w-full text-left whitespace-nowrap">
       <thead>
         <tr>
@@ -28,22 +58,55 @@ function text(row: Row, key: string) {
             v-for="column in columns"
             :key="column.key"
             scope="col"
-            class="py-2 pr-6 text-sm font-medium text-faint last:pr-0"
-            :class="{ 'text-right': column.align === 'right', 'hidden sm:table-cell': column.optional }"
+            :aria-sort="ariaSort(column.key)"
+            class="py-2 text-sm font-medium text-faint"
+            :class="[padding, { 'text-right': column.align === 'right', 'hidden sm:table-cell': column.optional }]"
           >
-            {{ column.label }}
+            <button
+              v-if="column.sortable"
+              type="button"
+              class="inline-flex cursor-pointer items-center gap-1 transition hover:text-fg"
+              :class="{ 'text-fg': sort?.key === column.key }"
+              @click="sortBy(column.key)"
+            >
+              {{ column.label }}
+              <template v-if="sort?.key === column.key">
+                <ArrowDown v-if="sort.descending" class="size-3.5" />
+                <ArrowUp v-else class="size-3.5" />
+              </template>
+            </button>
+            <template v-else>{{ column.label }}</template>
           </th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="row in rows" :key="rowKey(row)">
+      <tbody v-for="part in groups" :key="part.name">
+        <tr v-if="part.name">
+          <th :colspan="columns.length" scope="rowgroup" class="pt-7.5 pb-2.5 font-semibold" :class="{ 'pl-2.5': active }">
+            {{ part.name }}
+          </th>
+        </tr>
+        <tr
+          v-for="row in part.rows"
+          :key="rowKey(row)"
+          :class="{ 'group cursor-pointer': active }"
+          :aria-current="active?.(row) || undefined"
+          @click="active && emit('pick', row)"
+        >
           <td
             v-for="column in columns"
             :key="column.key"
-            class="border-t border-line py-2.5 pr-6 last:pr-0"
-            :class="{ 'num text-right': column.align === 'right', 'hidden sm:table-cell': column.optional }"
+            class="border-t border-line py-2.5 first:rounded-l-md last:rounded-r-md"
+            :class="[
+              padding,
+              {
+                'num text-right': column.align === 'right',
+                'hidden sm:table-cell': column.optional,
+                'border-transparent bg-selected': active?.(row),
+                'group-hover:bg-hover': active && !active(row),
+              },
+            ]"
           >
-            <slot :name="`cell-${column.key}`" :row>{{ text(row, column.key) }}</slot>
+            <slot :name="`cell-${column.key}`" :row>{{ cellOf(row, column.key) ?? "" }}</slot>
           </td>
         </tr>
       </tbody>

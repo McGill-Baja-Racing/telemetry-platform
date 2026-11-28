@@ -5,8 +5,9 @@ import LineChart from "../components/chart/LineChart.vue";
 import CarBarFull from "../components/shell/CarBarFull.vue";
 import CarBarSmall from "../components/shell/CarBarSmall.vue";
 import type { CarState } from "../components/shell/car.ts";
-import type { MenuItem, Tone } from "../components/ui/types.ts";
+import type { MenuItem, Sort, Tone } from "../components/ui/types.ts";
 import UiButton from "../components/ui/UiButton.vue";
+import UiCheckbox from "../components/ui/UiCheckbox.vue";
 import UiChip from "../components/ui/UiChip.vue";
 import UiFigures from "../components/ui/UiFigures.vue";
 import UiFormRow from "../components/ui/UiFormRow.vue";
@@ -50,7 +51,9 @@ const run = ref<string>();
 const signal = ref("");
 const mine = ref(true);
 const powertrain = ref(false);
+const ticked = ref(true);
 const tab = ref("nodes");
+const nodeSort = ref<Sort>({ key: "name", descending: false });
 const shown = ref({ x: true, y: true, z: true, speed: false });
 
 const menu: MenuItem[] = [
@@ -167,6 +170,7 @@ const speed = [
         />
       </div>
       <div class="flex flex-wrap items-center gap-2.5">
+        <UiCheckbox v-model="ticked" label="Select run" />
         <UiChip v-model="mine">My team</UiChip>
         <UiChip v-model="powertrain" color="powertrain">Powertrain</UiChip>
         <UiTag>Setup B</UiTag>
@@ -224,11 +228,12 @@ const speed = [
         <template #nodes>
           <UiTable
             :columns="[
-              { key: 'name', label: 'Node' },
-              { key: 'id', label: 'Id', optional: true },
+              { key: 'name', label: 'Node', sortable: true },
+              { key: 'id', label: 'Id', optional: true, sortable: true },
               { key: 'rate', label: 'Rate', align: 'right' },
-              { key: 'state', label: 'State' },
+              { key: 'state', label: 'State', sortable: true },
             ]"
+            v-model:sort="nodeSort"
             :rows="nodes"
             :row-key="(row) => row.id"
           >

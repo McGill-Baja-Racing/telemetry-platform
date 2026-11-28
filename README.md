@@ -23,6 +23,7 @@ Join the car's Wi-Fi (`BajaDAQ`) and run `pnpm dev`. The server asks the master 
 - Only completed logs are collected: the one being recorded shows up after Stop.
 - Each hour of running is about 80 MB to download: the `.bin` log and its `.utc` GPS time companion. The master's firmware must serve `.utc` files (`format=utc`).
 - A renamed log is recognized by its content and not imported twice.
+- Without the car's Wi-Fi, copy a log and its `.bin.utc` companion off the SD card and use Import a log file on Runs.
 - The master's address is `MASTER_URL` in `server/.env`. Remove that line to turn the collector off, as on the cloud server.
 - To see each check, the download speed and the import time, run `NODE_DEBUG=collector pnpm dev`.
 
