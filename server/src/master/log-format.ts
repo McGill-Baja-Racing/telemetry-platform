@@ -7,6 +7,8 @@ export const UTC_BYTES = 8;
 const CAN_ID_GPS_SPEED = 0x700;
 
 export type Sample = {
+  /** Position in the file, which the `.utc` companion follows. */
+  index: number;
   canId: number;
   value: number;
   /** Master clock: milliseconds since it powered on. */
@@ -25,17 +27,21 @@ type Summary = {
   canIds: Set<number>;
 };
 
-/** Samples come in the order the master received them, not in time order. */
+/**
+ * Samples come in the order the master received them, not in time order. Skips records without a
+ * master time: until July 2026 the master logged every CAN frame, such as state reports (time 0) and
+ * eCVT drive frames, and until late September engine frames with a negative time. No session lasts
+ * the 2³¹ ms (24.8 days) the firmware allows.
+ */
 export async function* readSamples(input: AsyncIterable<Uint8Array>): AsyncGenerator<Sample> {
+  let index = 0;
   for await (const records of wholeRecords(input, RECORD_BYTES)) {
-    for (let offset = 0; offset < records.length; offset += RECORD_BYTES) {
+    for (let offset = 0; offset < records.length; offset += RECORD_BYTES, index++) {
+      const timestampMs = records.readUInt32LE(offset + 12);
+      if (timestampMs === 0 || timestampMs >= 2 ** 31) continue;
       const canId = records.readUInt32LE(offset) & 0x7ff;
       const value = records.readInt32LE(offset + 8);
-      yield {
-        canId,
-        value: canId === CAN_ID_GPS_SPEED ? value / 100 : value,
-        timestampMs: records.readUInt32LE(offset + 12),
-      };
+      yield { index, canId, value: canId === CAN_ID_GPS_SPEED ? value / 100 : value, timestampMs };
     }
   }
 }
@@ -71,7 +77,7 @@ export async function summarize(
   const canIds = new Set<number>();
 
   for await (const sample of samples) {
-    if (sampleCount === firstUtc?.index) clockOffsetMs = firstUtc.utcMs - sample.timestampMs;
+    if (sample.index === firstUtc?.index) clockOffsetMs = firstUtc.utcMs - sample.timestampMs;
     sampleCount++;
     firstTimestampMs = Math.min(firstTimestampMs, sample.timestampMs);
     lastTimestampMs = Math.max(lastTimestampMs, sample.timestampMs);
