@@ -8,11 +8,11 @@ import RunCharts from "../../components/run/RunCharts.vue";
 import RunCursor from "../../components/run/RunCursor.vue";
 import RunLaps from "../../components/run/RunLaps.vue";
 import RunRangeBar from "../../components/run/RunRangeBar.vue";
-import { bestLap, indexAt, type Lap, lapAt } from "../../components/run/run.ts";
+import { bestLap, durationOf, indexAt, type Lap, lapAt, runFacts } from "../../components/run/run.ts";
 import TrackMap from "../../components/run/TrackMap.vue";
 import UiPage from "../../components/ui/UiPage.vue";
 import UiTabs from "../../components/ui/UiTabs.vue";
-import { formatClock, testDay } from "../../format.ts";
+import { testDay } from "../../format.ts";
 import { chartableSignals } from "../../signals.ts";
 
 const route = useRoute("/runs/[id]");
@@ -22,9 +22,7 @@ const { data: run } = loaded.run;
 const { data: track } = loaded.track;
 const { data: lapResult } = loaded.laps;
 
-const duration = computed(() =>
-  run.value ? (Date.parse(run.value.endedAt) - Date.parse(run.value.startedAt)) / 1000 : 0,
-);
+const duration = computed(() => (run.value ? durationOf(run.value) : 0));
 const groups = computed(() => chartableSignals(run.value?.signals ?? []));
 const signals = computed(() => [...groups.value.values()].flat());
 
@@ -84,26 +82,9 @@ const overview = computed(() => {
 const laps = computed<Lap[]>(() => lapResult.value?.laps ?? []);
 const best = computed(() => bestLap(laps.value));
 
-const meta = computed(() => {
-  if (!run.value) return [];
-  const started = run.value.gpsTime
-    ? new Date(run.value.startedAt).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : "No GPS time";
-  const items = [
-    { label: "Started", value: started },
-    { label: "Duration", value: formatClock(duration.value, false) },
-  ];
-  const distance = track.value?.distance.at(-1);
-  if (distance) items.push({ label: "Distance", value: `${(distance / 1000).toFixed(1)} km` });
-  if (best.value) {
-    const time = formatClock(best.value.end - best.value.start);
-    items.push({ label: "Laps", value: `${laps.value.length}, best ${time}` });
-  }
-  return items;
-});
+const meta = computed(() =>
+  run.value ? runFacts(run.value, track.value?.distance.at(-1), laps.value) : [],
+);
 
 function distanceAt(seconds: number) {
   const fixes = track.value;
@@ -147,7 +128,7 @@ function onCursor(index: number | null) {
       <dl class="flex flex-wrap gap-x-8 gap-y-3">
         <div v-for="item in meta" :key="item.label" class="grid gap-0.5">
           <dt class="text-sm text-faint">{{ item.label }}</dt>
-          <dd class="num font-medium whitespace-nowrap">{{ item.value }}</dd>
+          <dd class="num font-medium whitespace-nowrap">{{ item.value }} {{ item.unit }}</dd>
         </div>
       </dl>
     </template>

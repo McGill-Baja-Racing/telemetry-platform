@@ -1,3 +1,5 @@
+import { formatClock } from "../../format.ts";
+
 /** Seconds from the start of the run, and metres driven. */
 export type Lap = { start: number; end: number; distance: number };
 
@@ -31,4 +33,35 @@ export function bestLap(laps: Lap[]) {
     (best, lap) => (!best || lap.end - lap.start < best.end - best.start ? lap : best),
     undefined,
   );
+}
+
+/** A run as the API lists it. Without GPS time, it is dated from when the master powered on. */
+type Recording = { startedAt: string; endedAt: string; gpsTime: boolean };
+
+/** Seconds. */
+export function durationOf(run: { startedAt: string; endedAt: string }) {
+  return (Date.parse(run.endedAt) - Date.parse(run.startedAt)) / 1000;
+}
+
+const startTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+export function formatStarted(run: Recording) {
+  return run.gpsTime ? startTime.format(Date.parse(run.startedAt)) : "No GPS time";
+}
+
+/** What the run page and the runs preview say about a run: `distance` in metres, from its track. */
+export function runFacts(run: Recording, distance: number | undefined, laps: Lap[]) {
+  const facts: { label: string; value: string; unit?: string }[] = [
+    { label: "Started", value: formatStarted(run) },
+    { label: "Duration", value: formatClock(durationOf(run), false) },
+  ];
+  if (distance) facts.push({ label: "Distance", value: (distance / 1000).toFixed(1), unit: "km" });
+  const best = bestLap(laps);
+  if (best) {
+    facts.push({
+      label: "Laps",
+      value: `${laps.length}, best ${formatClock(best.end - best.start)}`,
+    });
+  }
+  return facts;
 }
