@@ -35,9 +35,19 @@ afterAll(async () => {
   await rm(folder, { recursive: true });
 });
 
-async function importLog(sha256: string, firstUtc: { index: number; utcMs: number } | null) {
+async function importLog(
+  sha256: string,
+  firstUtc: { index: number; utcMs: number } | null,
+  file = path,
+) {
   const names = new Map([[BRAKE, { name: "test_brake", node: "test_node", units: "psi" }]]);
-  const result = await importRecording({ name: "log.bin", path, sha256, signals: names, firstUtc });
+  const result = await importRecording({
+    name: "log.bin",
+    path: file,
+    sha256,
+    signals: names,
+    firstUtc,
+  });
   imported.push(result.id);
   return result;
 }
@@ -80,4 +90,24 @@ test("imports the same content once, and counts from power-on without a GPS fix"
     .from(recordings)
     .where(eq(recordings.id, first.id));
   expect(recording).toEqual({ startedAt: new Date(800), gpsTime: false });
+});
+
+test("skips records without a master time, which old firmware logged", async () => {
+  const strays = join(folder, "strays.bin");
+  const stateReport = record(0x0c1, 0, 1);
+  const ecvtFrame = record(0x181, 0xff00_0000, 2);
+  await writeFile(
+    strays,
+    Buffer.concat([stateReport, record(BRAKE, 1000, 1500), ecvtFrame, record(BRAKE, 2500, 1600)]),
+  );
+
+  const { id } = await importLog(randomUUID(), { index: 3, utcMs: FIX_MS }, strays);
+
+  const [recording] = await db.select().from(recordings).where(eq(recordings.id, id));
+  expect(recording).toMatchObject({
+    startedAt: new Date(FIX_MS - 1500),
+    endedAt: new Date(FIX_MS),
+    sampleCount: 2,
+  });
+  expect(await db.$count(samples, eq(samples.recordingId, id))).toBe(2);
 });

@@ -7,7 +7,7 @@ test("decodes the worked example from LOG_FORMAT.md", async () => {
   const log = Readable.from([Buffer.from("b100000000000000dc050000e8030000", "hex")]);
 
   expect(await Array.fromAsync(readSamples(log))).toEqual([
-    { canId: 0x0b1, value: 1500, timestampMs: 1000 },
+    { index: 0, canId: 0x0b1, value: 1500, timestampMs: 1000 },
   ]);
 });
 
@@ -15,8 +15,8 @@ test("decodes GPS speed in km/h", async () => {
   const log = Readable.from([Buffer.concat([record(0x700, 2500, 1250), record(0x123, 800, -42)])]);
 
   expect(await Array.fromAsync(readSamples(log))).toEqual([
-    { canId: 0x700, value: 12.5, timestampMs: 2500 },
-    { canId: 0x123, value: -42, timestampMs: 800 },
+    { index: 0, canId: 0x700, value: 12.5, timestampMs: 2500 },
+    { index: 1, canId: 0x123, value: -42, timestampMs: 800 },
   ]);
   expect(decodedUnits(0x700, "km/h_x100")).toBe("km/h");
   expect(decodedUnits(0x0b1, "psi")).toBe("psi");
